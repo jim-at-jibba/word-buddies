@@ -13,8 +13,10 @@
 import { Route as rootRoute } from './routes/__root'
 import { Route as SettingsImport } from './routes/settings'
 import { Route as ProfileImport } from './routes/profile'
+import { Route as GamesImport } from './routes/games'
 import { Route as DashboardImport } from './routes/dashboard'
 import { Route as IndexImport } from './routes/index'
+import { Route as GameGameTypeImport } from './routes/game/$gameType'
 
 // Create/Update Routes
 
@@ -30,6 +32,12 @@ const ProfileRoute = ProfileImport.update({
   getParentRoute: () => rootRoute,
 } as any)
 
+const GamesRoute = GamesImport.update({
+  id: '/games',
+  path: '/games',
+  getParentRoute: () => rootRoute,
+} as any)
+
 const DashboardRoute = DashboardImport.update({
   id: '/dashboard',
   path: '/dashboard',
@@ -39,6 +47,12 @@ const DashboardRoute = DashboardImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const GameGameTypeRoute = GameGameTypeImport.update({
+  id: '/game/$gameType',
+  path: '/game/$gameType',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -60,6 +74,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardImport
       parentRoute: typeof rootRoute
     }
+    '/games': {
+      id: '/games'
+      path: '/games'
+      fullPath: '/games'
+      preLoaderRoute: typeof GamesImport
+      parentRoute: typeof rootRoute
+    }
     '/profile': {
       id: '/profile'
       path: '/profile'
@@ -74,6 +95,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsImport
       parentRoute: typeof rootRoute
     }
+    '/game/$gameType': {
+      id: '/game/$gameType'
+      path: '/game/$gameType'
+      fullPath: '/game/$gameType'
+      preLoaderRoute: typeof GameGameTypeImport
+      parentRoute: typeof rootRoute
+    }
   }
 }
 
@@ -82,46 +110,75 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/games': typeof GamesRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
+  '/game/$gameType': typeof GameGameTypeRoute
 }
 
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/games': typeof GamesRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
+  '/game/$gameType': typeof GameGameTypeRoute
 }
 
 export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/dashboard': typeof DashboardRoute
+  '/games': typeof GamesRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
+  '/game/$gameType': typeof GameGameTypeRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/dashboard' | '/profile' | '/settings'
+  fullPaths:
+    | '/'
+    | '/dashboard'
+    | '/games'
+    | '/profile'
+    | '/settings'
+    | '/game/$gameType'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/dashboard' | '/profile' | '/settings'
-  id: '__root__' | '/' | '/dashboard' | '/profile' | '/settings'
+  to:
+    | '/'
+    | '/dashboard'
+    | '/games'
+    | '/profile'
+    | '/settings'
+    | '/game/$gameType'
+  id:
+    | '__root__'
+    | '/'
+    | '/dashboard'
+    | '/games'
+    | '/profile'
+    | '/settings'
+    | '/game/$gameType'
   fileRoutesById: FileRoutesById
 }
 
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DashboardRoute: typeof DashboardRoute
+  GamesRoute: typeof GamesRoute
   ProfileRoute: typeof ProfileRoute
   SettingsRoute: typeof SettingsRoute
+  GameGameTypeRoute: typeof GameGameTypeRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DashboardRoute: DashboardRoute,
+  GamesRoute: GamesRoute,
   ProfileRoute: ProfileRoute,
   SettingsRoute: SettingsRoute,
+  GameGameTypeRoute: GameGameTypeRoute,
 }
 
 export const routeTree = rootRoute
@@ -136,8 +193,10 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/dashboard",
+        "/games",
         "/profile",
-        "/settings"
+        "/settings",
+        "/game/$gameType"
       ]
     },
     "/": {
@@ -146,11 +205,17 @@ export const routeTree = rootRoute
     "/dashboard": {
       "filePath": "dashboard.tsx"
     },
+    "/games": {
+      "filePath": "games.tsx"
+    },
     "/profile": {
       "filePath": "profile.tsx"
     },
     "/settings": {
       "filePath": "settings.tsx"
+    },
+    "/game/$gameType": {
+      "filePath": "game/$gameType.tsx"
     }
   }
 }

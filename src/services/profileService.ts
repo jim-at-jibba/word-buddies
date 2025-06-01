@@ -45,8 +45,11 @@ const encryptProfileData = async (profile: Profile): Promise<Profile> => {
     // Create a copy of the profile with sensitive data encrypted
     const encryptedProfile = { ...profile };
     
-    // Encrypt the name (considered sensitive)
+    // Encrypt sensitive data
     encryptedProfile.name = await encryptionService.encrypt(profile.name, password);
+    
+    // If there are any additional sensitive fields, encrypt them here
+    // For example, if we add more sensitive data in the future
     
     return encryptedProfile;
   } catch (error) {
@@ -70,15 +73,26 @@ const decryptProfileData = async (encryptedProfile: Profile): Promise<Profile> =
     // Create a copy of the profile with sensitive data decrypted
     const decryptedProfile = { ...encryptedProfile };
     
-    // Check if the name is encrypted (starts with base64 characters)
-    if (typeof decryptedProfile.name === 'string' && /^[A-Za-z0-9+/=]/.test(decryptedProfile.name)) {
-      try {
-        decryptedProfile.name = await encryptionService.decrypt(decryptedProfile.name, password);
-      } catch (e) {
-        // If decryption fails, it might not be encrypted
-        console.warn('Failed to decrypt profile name, might not be encrypted');
+    // Helper function to safely decrypt a potentially encrypted string
+    const safeDecrypt = async (value: string): Promise<string> => {
+      // Check if the value is encrypted (starts with base64 characters)
+      if (typeof value === 'string' && /^[A-Za-z0-9+/=]/.test(value)) {
+        try {
+          return await encryptionService.decrypt(value, password);
+        } catch (e) {
+          // If decryption fails, it might not be encrypted
+          console.warn('Failed to decrypt value, might not be encrypted');
+          return value;
+        }
       }
-    }
+      return value;
+    };
+    
+    // Decrypt sensitive data
+    decryptedProfile.name = await safeDecrypt(decryptedProfile.name);
+    
+    // If there are any additional sensitive fields, decrypt them here
+    // For example, if we add more sensitive data in the future
     
     return decryptedProfile;
   } catch (error) {
@@ -198,6 +212,11 @@ export const updateProfileLastUsed = async (id: string): Promise<boolean> => {
     
     // Update the lastUsed timestamp
     encryptedProfile.lastUsed = new Date();
+    
+    // Update the active profile in settings
+    import('./settingsService').then(settingsService => {
+      settingsService.setActiveProfileId(id);
+    });
     
     // Store the updated profile
     await db.update(STORES.PROFILES, encryptedProfile);

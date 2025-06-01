@@ -25,12 +25,20 @@ export default function Header() {
               {selectedProfile.name.charAt(0).toUpperCase()}
             </div>
             <span className="text-sm font-medium">{selectedProfile.name}</span>
-            <Link 
-              to="/profile" 
-              className="ml-2 text-xs text-primary-600 hover:text-primary-800"
-            >
-              Switch
-            </Link>
+            <div className="flex gap-2 ml-2">
+              <Link 
+                to="/profile" 
+                className="text-xs text-primary-600 hover:text-primary-800"
+              >
+                Switch
+              </Link>
+              <button 
+                onClick={() => alert('Settings feature coming soon!')}
+                className="text-xs text-primary-600 hover:text-primary-800"
+              >
+                Settings
+              </button>
+            </div>
           </div>
         ) : (
           <Link 

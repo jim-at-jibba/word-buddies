@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { Profile } from '../components/profile';
 import * as profileService from '../services/profileService';
+import * as settingsService from '../services/settingsService';
 
 interface UseProfilesReturn {
   profiles: Profile[];
@@ -35,10 +36,24 @@ export function useProfiles(maxProfiles: number = 10): UseProfilesReturn {
         // Check if max profiles reached
         setHasReachedMaxProfiles(allProfiles.length >= maxProfiles);
         
-        // Try to select the most recently used profile
+        // Try to get the active profile ID from settings
+        const activeProfileId = settingsService.getActiveProfileId();
+        
+        if (activeProfileId) {
+          // If we have an active profile ID, try to load that profile
+          const activeProfile = await profileService.getProfileById(activeProfileId);
+          if (activeProfile) {
+            setSelectedProfile(activeProfile);
+            await profileService.updateProfileLastUsed(activeProfileId);
+            return;
+          }
+        }
+        
+        // Fall back to the most recently used profile if no active profile is found
         const recentProfile = await profileService.getMostRecentProfile();
         if (recentProfile) {
           setSelectedProfile(recentProfile);
+          settingsService.setActiveProfileId(recentProfile.id);
         }
         
         setLoading(false);
@@ -96,7 +111,18 @@ export function useProfiles(maxProfiles: number = 10): UseProfilesReturn {
         // Clear selected profile if it's the one being deleted
         if (selectedProfile?.id === profileId) {
           const remainingProfiles = profiles.filter(profile => profile.id !== profileId);
-          setSelectedProfile(remainingProfiles.length > 0 ? remainingProfiles[0] : null);
+          
+          if (remainingProfiles.length > 0) {
+            // Select the first remaining profile
+            const newSelectedProfile = remainingProfiles[0];
+            setSelectedProfile(newSelectedProfile);
+            settingsService.setActiveProfileId(newSelectedProfile.id);
+            await profileService.updateProfileLastUsed(newSelectedProfile.id);
+          } else {
+            // No profiles left
+            setSelectedProfile(null);
+            settingsService.clearActiveProfileId();
+          }
         }
         
         setHasReachedMaxProfiles(false);
@@ -114,6 +140,9 @@ export function useProfiles(maxProfiles: number = 10): UseProfilesReturn {
       if (profile) {
         setSelectedProfile(profile);
         await profileService.updateProfileLastUsed(profileId);
+        
+        // Save the active profile ID to settings
+        settingsService.setActiveProfileId(profileId);
       }
     } catch (err) {
       setError(err instanceof Error ? err : new Error('Failed to select profile'));

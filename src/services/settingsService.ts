@@ -78,6 +78,13 @@ export const setActiveProfileId = (profileId: string): void => {
 };
 
 /**
+ * Clear the active profile ID
+ */
+export const clearActiveProfileId = (): void => {
+  removeSetting(SETTINGS.ACTIVE_PROFILE_ID);
+};
+
+/**
  * Get the current theme (light/dark)
  */
 export const getTheme = (): 'light' | 'dark' => {

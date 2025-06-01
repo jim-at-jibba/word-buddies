@@ -1,5 +1,5 @@
 
-import { createFileRoute } from '@tanstack/react-router';
+import { createFileRoute, Link } from '@tanstack/react-router';
 import { useProfileContext } from '../contexts/ProfileContext';
 
 export const Route = createFileRoute('/dashboard')({
@@ -14,12 +14,12 @@ function DashboardRoute() {
     return (
       <div className="flex flex-col items-center justify-center h-screen">
         <p className="text-lg text-gray-700 mb-4">No profile selected</p>
-        <a 
-          href="/profile"
+        <Link 
+          to="/profile"
           className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
         >
           Select a Profile
-        </a>
+        </Link>
       </div>
     );
   }
@@ -60,13 +60,20 @@ function DashboardRoute() {
           </div>
         </div>
         
-        <div className="mt-6 flex justify-end">
-          <a 
-            href="/profile"
+        <div className="mt-6 flex justify-end gap-4">
+          <Link 
+            to="/profile"
             className="px-4 py-2 text-sm text-gray-600 hover:text-primary-600"
           >
             Switch Profile
-          </a>
+          </Link>
+          {/* Settings link will be added when the route is registered */}
+          <button 
+            onClick={() => alert('Settings feature coming soon!')}
+            className="px-4 py-2 text-sm text-gray-600 hover:text-primary-600"
+          >
+            Profile Settings
+          </button>
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-const year3Words = [
+export const year3Words = [
   // High frequency words (1-50)
   "about", "after", "again", "against", "also", "always", "another", "any", 
   "anyone", "anything", "around", "ask", "asked", "asking", "because", "been", 

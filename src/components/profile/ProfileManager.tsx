@@ -30,7 +30,16 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   const [profileToEdit, setProfileToEdit] = useState<Profile | null>(null);
 
   const handleCreateProfile = () => {
+    console.log('ProfileManager.handleCreateProfile called');
+    console.log('Current mode:', mode);
+    
+    // Force mode to 'create' and log the change
     setMode('create');
+    
+    // Use setTimeout to verify the state update occurred
+    setTimeout(() => {
+      console.log('Mode after update:', mode);
+    }, 0);
   };
 
   const handleEditProfile = (profile: Profile) => {
@@ -53,6 +62,9 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
     setProfileToEdit(null);
   };
 
+  // For debugging purposes
+  console.log('ProfileManager state:', { mode, hasReachedMaxProfiles, profilesCount: profiles.length });
+
   return (
     <div className="w-full max-w-4xl mx-auto p-4">
       {mode === 'select' && (
@@ -62,7 +74,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
           onSelectProfile={onSelectProfile}
           onEditProfile={handleEditProfile}
           onDeleteProfile={(profile) => onDeleteProfile(profile.id)}
-          onCreateProfile={hasReachedMaxProfiles ? undefined : handleCreateProfile}
+          onCreateProfile={handleCreateProfile} // Always pass the handler, we'll check max profiles internally
           maxProfiles={maxProfiles}
         />
       )}

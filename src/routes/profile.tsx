@@ -1,5 +1,7 @@
+import { useState } from 'react';
 import { useProfiles } from '../hooks/useProfiles';
 import ProfileManager from '../components/profile/ProfileManager';
+import ProfileForm from '../components/profile/ProfileForm';
 import { MAX_PROFILES } from '../contexts/ProfileContext';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import type { Profile } from '@/components/profile';
@@ -10,6 +12,8 @@ export const Route = createFileRoute('/profile')({
 
 function ProfileRoute() {
   const navigate = useNavigate();
+  const [showCreateForm, setShowCreateForm] = useState(false);
+  
   const {
     profiles,
     loading,
@@ -71,6 +75,12 @@ function ProfileRoute() {
     );
   }
 
+  // Toggle create profile form
+  const toggleCreateForm = () => {
+    console.log('Toggling create form, current state:', showCreateForm);
+    setShowCreateForm(!showCreateForm);
+  };
+
   return (
     <div className="min-h-screen bg-gray-50 py-8">
       <div className="container mx-auto px-4">
@@ -79,21 +89,48 @@ function ProfileRoute() {
           <p className="text-gray-600 mt-2">Choose or create your profile to get started</p>
         </header>
 
-        <ProfileManager
-          profiles={profiles}
-          selectedProfileId={selectedProfile?.id}
-          onSelectProfile={handleSelectProfile}
-          onCreateProfile={handleCreateProfile}
-          onUpdateProfile={handleUpdateProfile}
-          onDeleteProfile={handleDeleteProfile}
-          maxProfiles={MAX_PROFILES}
-          hasReachedMaxProfiles={maxProfilesReached}
-        />
-
-        {profiles.length > 0 && (
-          <div className="mt-8 text-center text-sm text-gray-500">
-            <p>You have {profiles.length} of {MAX_PROFILES} profiles</p>
+        {showCreateForm ? (
+          <div className="w-full max-w-md mx-auto bg-white p-6 rounded-lg shadow-md">
+            <h2 className="text-xl font-bold mb-4">Create New Profile</h2>
+            <ProfileForm
+              onSubmit={handleCreateProfile}
+              onCancel={() => setShowCreateForm(false)}
+            />
           </div>
+        ) : (
+          <>
+            <div className="mb-6 text-center">
+              <button 
+                onClick={toggleCreateForm}
+                disabled={maxProfilesReached}
+                className={`px-4 py-2 rounded-md ${maxProfilesReached ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'} text-white focus:outline-none focus:ring-2 focus:ring-primary-500`}
+              >
+                Create New Profile
+              </button>
+              {maxProfilesReached && (
+                <p className="text-sm text-red-500 mt-2">
+                  Maximum number of profiles reached ({MAX_PROFILES})
+                </p>
+              )}
+            </div>
+
+            <ProfileManager
+              profiles={profiles}
+              selectedProfileId={selectedProfile?.id}
+              onSelectProfile={handleSelectProfile}
+              onCreateProfile={toggleCreateForm} /* Changed to use our toggle function */
+              onUpdateProfile={handleUpdateProfile}
+              onDeleteProfile={handleDeleteProfile}
+              maxProfiles={MAX_PROFILES}
+              hasReachedMaxProfiles={maxProfilesReached}
+            />
+
+            {profiles.length > 0 && (
+              <div className="mt-8 text-center text-sm text-gray-500">
+                <p>You have {profiles.length} of {MAX_PROFILES} profiles</p>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

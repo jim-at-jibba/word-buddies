@@ -1,0 +1,254 @@
+/**
+ * Word Search Game Component
+ * 
+ * Renders a word search game interface where players can find words in a grid.
+ */
+
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from '@tanstack/react-router';
+import { useGameEngine } from '../../hooks/useGameEngine';
+import { GamePatternType, WordDifficulty } from '../../game/core/types';
+
+interface Position {
+  row: number;
+  col: number;
+}
+
+interface WordSearchProps {
+  yearGroup: number;
+  difficulty: string;
+}
+
+export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty }) => {
+  const navigate = useNavigate();
+  const { 
+    gameState, 
+    startGame, 
+    processInput, 
+    error,
+    loading
+  } = useGameEngine();
+  
+  // Local state for selected cells
+  const [selectedCells, setSelectedCells] = useState<Position[]>([]);
+  const [isSelecting, setIsSelecting] = useState(false);
+  const [timeElapsed, setTimeElapsed] = useState(0);
+  
+  // Start game on component mount
+  useEffect(() => {
+    startGame({
+      patternType: GamePatternType.WORD_SEARCH,
+      difficulty: difficulty as WordDifficulty,
+      yearGroup,
+      wordCount: 10
+    });
+  }, [startGame, difficulty, yearGroup]);
+  
+  // Timer effect
+  useEffect(() => {
+    if (!gameState || gameState.completed) return;
+    
+    const timer = setInterval(() => {
+      setTimeElapsed(prev => prev + 1);
+    }, 1000);
+    
+    return () => clearInterval(timer);
+  }, [gameState, navigate]);
+  
+  // Navigate to results when game is complete
+  useEffect(() => {
+    if (gameState?.completed) {
+      navigate({ to: '/game-result' });
+    }
+  }, [gameState, navigate]);
+  
+  // Format time as MM:SS
+  const formatTime = (seconds: number): string => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+  };
+  
+  // Handle mouse down on a cell
+  const handleMouseDown = (row: number, col: number) => {
+    setIsSelecting(true);
+    setSelectedCells([{ row, col }]);
+  };
+  
+  // Handle mouse enter while selecting
+  const handleMouseEnter = (row: number, col: number) => {
+    if (!isSelecting) return;
+    
+    // Check if this cell is adjacent to the last selected cell
+    const lastCell = selectedCells[selectedCells.length - 1];
+    const isAdjacent = isAdjacentCell(lastCell, { row, col });
+    
+    // Check if this cell is already selected
+    const isAlreadySelected = selectedCells.some(cell => cell.row === row && cell.col === col);
+    
+    if (isAdjacent && !isAlreadySelected) {
+      setSelectedCells([...selectedCells, { row, col }]);
+    }
+  };
+  
+  // Handle mouse up to complete selection
+  const handleMouseUp = () => {
+    if (isSelecting && selectedCells.length > 0) {
+      // Submit the selected cells to the game engine
+      processInput(selectedCells);
+      
+      // Reset selection
+      setIsSelecting(false);
+      setSelectedCells([]);
+    }
+  };
+  
+  // Check if two cells are adjacent (including diagonals)
+  const isAdjacentCell = (cell1: Position, cell2: Position): boolean => {
+    const rowDiff = Math.abs(cell1.row - cell2.row);
+    const colDiff = Math.abs(cell1.col - cell2.col);
+    
+    // Adjacent cells can be at most 1 cell away in any direction
+    return rowDiff <= 1 && colDiff <= 1;
+  };
+  
+  // Check if a cell is in the current selection
+  const isSelected = (row: number, col: number): boolean => {
+    return selectedCells.some(cell => cell.row === row && cell.col === col);
+  };
+  
+  // Check if a cell is revealed (part of a found word)
+  const isRevealed = (row: number, col: number): boolean => {
+    if (!gameState?.grid) return false;
+    return gameState.grid[row][col].isRevealed;
+  };
+  
+  // Render loading state
+  if (loading || !gameState) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+  
+  // Render error state
+  if (error) {
+    return (
+      <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
+        <p>Error: {error}</p>
+        <button 
+          className="mt-4 px-4 py-2 bg-primary-600 text-white rounded"
+          onClick={() => startGame({
+            patternType: GamePatternType.WORD_SEARCH,
+            difficulty: difficulty as WordDifficulty,
+            yearGroup,
+            wordCount: 10
+          })}
+        >
+          Try Again
+        </button>
+      </div>
+    );
+  }
+  
+  return (
+    <div className="w-full max-w-4xl mx-auto">
+      {/* Game header */}
+      <div className="flex justify-between items-center mb-6">
+        <div>
+          <h2 className="text-2xl font-bold">Word Search</h2>
+          <p className="text-gray-600">Find all the hidden words in the grid</p>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="bg-gray-100 px-4 py-2 rounded-lg">
+            <span className="font-medium">Time:</span> {formatTime(timeElapsed)}
+          </div>
+          <div className="bg-primary-100 px-4 py-2 rounded-lg">
+            <span className="font-medium">Score:</span> {gameState.score || 0}
+          </div>
+        </div>
+      </div>
+      
+      {/* Game grid */}
+      <div className="mb-8 overflow-auto">
+        <div 
+          className="grid gap-1 mx-auto"
+          style={{ 
+            gridTemplateColumns: `repeat(${gameState.gridSize}, minmax(30px, 40px))`,
+            touchAction: 'none' // Prevent scrolling on touch devices
+          }}
+          onMouseLeave={() => {
+            if (isSelecting) {
+              setIsSelecting(false);
+              setSelectedCells([]);
+            }
+          }}
+        >
+          {gameState.grid?.map((row: any[], rowIndex: number) => (
+            row.map((cell: any, colIndex: number) => (
+              <div
+                key={`${rowIndex}-${colIndex}`}
+                className={`
+                  w-full aspect-square flex items-center justify-center
+                  text-lg font-bold border rounded-md cursor-pointer
+                  select-none transition-colors
+                  ${isSelected(rowIndex, colIndex) ? 'bg-primary-200 border-primary-500' : ''}
+                  ${isRevealed(rowIndex, colIndex) ? 'bg-green-100 border-green-500' : 'bg-white border-gray-200'}
+                  ${isSelecting ? 'hover:bg-gray-100' : ''}
+                `}
+                onMouseDown={() => handleMouseDown(rowIndex, colIndex)}
+                onMouseEnter={() => handleMouseEnter(rowIndex, colIndex)}
+                onMouseUp={handleMouseUp}
+                // Touch events for mobile
+                onTouchStart={() => handleMouseDown(rowIndex, colIndex)}
+                onTouchMove={(e) => {
+                  // Get touch position and find the element under it
+                  const touch = e.touches[0];
+                  const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                  
+                  // Extract row and col from element id or data attributes
+                  // This is a simplified approach - you might need a more robust solution
+                  const cellId = element?.id;
+                  if (cellId && cellId.startsWith('cell-')) {
+                    const [row, col] = cellId.replace('cell-', '').split('-').map(Number);
+                    handleMouseEnter(row, col);
+                  }
+                }}
+                onTouchEnd={handleMouseUp}
+                id={`cell-${rowIndex}-${colIndex}`}
+              >
+                {cell.letter}
+              </div>
+            ))
+          ))}
+        </div>
+      </div>
+      
+      {/* Word list */}
+      <div className="mb-6">
+        <h3 className="font-bold mb-2">Words to Find: {gameState.remainingWords} remaining</h3>
+        <div className="flex flex-wrap gap-2">
+          {gameState.foundWords?.map((word: string, index: number) => (
+            <span 
+              key={index} 
+              className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
+            >
+              {word}
+            </span>
+          ))}
+        </div>
+      </div>
+      
+      {/* Controls */}
+      <div className="flex justify-between">
+        <button
+          className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+          onClick={() => navigate({ to: '/games' })}
+        >
+          Exit Game
+        </button>
+      </div>
+    </div>
+  );
+};

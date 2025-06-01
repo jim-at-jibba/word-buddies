@@ -2,14 +2,14 @@
  * Dynamic Game Route
  * 
  * Renders the appropriate game UI based on the game type parameter.
- * Currently supports the Anagrams game pattern.
+ * Currently supports the Anagrams and Word Search game patterns.
  */
 
 import { createFileRoute, Link, useNavigate } from '@tanstack/react-router';
 import { useEffect, useState } from 'react';
 import { useProfileContext } from '../../contexts/ProfileContext';
 import { useGameContext } from '../../contexts/GameContext';
-import { GamePatternType } from '../../game/core/types';
+import { WordSearch } from '../../components/games/WordSearch';
 
 export const Route = createFileRoute('/game/$gameType')({
   component: GameRoute,
@@ -85,7 +85,7 @@ function GameRoute() {
   // Handle game end
   const handleEndGame = () => {
     setGameOver(true);
-    const result = endGame();
+    endGame();
     navigate({ to: '/game-result' });
   };
   
@@ -113,115 +113,104 @@ function GameRoute() {
     );
   }
   
-  // Render Anagrams game UI
-  if (gameType === GamePatternType.ANAGRAMS) {
-    return (
-      <div className="min-h-screen bg-gray-50 py-8">
-        <div className="container mx-auto px-4">
-          <header className="mb-8 flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-gray-900">Anagrams</h1>
-            <div className="flex items-center gap-4">
-              <div className="text-lg font-medium">
-                Score: <span className="text-primary-600">{gameState.score}</span>
-              </div>
-              <div className="text-lg font-medium">
-                Time: <span className={timeLeft < 60 ? "text-red-600" : "text-primary-600"}>
-                  {formatTime(timeLeft)}
-                </span>
-              </div>
-            </div>
-          </header>
-          
-          <div className="bg-white rounded-lg shadow-md p-6">
-            <div className="flex justify-between mb-4">
+  // Render the appropriate game component based on game type
+  const renderGameComponent = () => {
+    switch (gameType) {
+      case 'anagrams':
+        return (
+          <div className="w-full max-w-4xl mx-auto">
+            <div className="flex justify-between items-center mb-6">
               <div>
-                Word {gameState.currentIndex + 1} of {gameState.totalWords}
+                <h2 className="text-2xl font-bold">Anagrams</h2>
+                <p className="text-gray-600">Unscramble the letters to form the word</p>
               </div>
-              <div>
-                Correct: {gameState.correctCount} | Incorrect: {gameState.incorrectCount}
+              <div className="flex items-center gap-4">
+                <div className="bg-gray-100 px-4 py-2 rounded-lg">
+                  <span className="font-medium">Time:</span> {formatTime(timeLeft)}
+                </div>
+                <div className="bg-primary-100 px-4 py-2 rounded-lg">
+                  <span className="font-medium">Score:</span> {gameState?.score || 0}
+                </div>
               </div>
             </div>
             
-            {gameState.currentScrambledWord && !gameOver ? (
-              <div className="text-center py-8">
-                <div className="mb-6">
-                  <h2 className="text-2xl font-bold mb-2">Unscramble this word:</h2>
-                  <div className="text-4xl font-bold tracking-wider text-primary-700">
-                    {gameState.currentScrambledWord.toUpperCase()}
+            {gameState && (
+              <div className="mb-8">
+                <div className="text-center mb-4">
+                  <p className="text-sm text-gray-600 mb-1">Word {gameState.currentIndex + 1} of {gameState.totalWords}</p>
+                  <div className="text-4xl font-bold tracking-wide bg-gray-100 py-6 px-4 rounded-lg">
+                    {gameState.currentScrambledWord}
                   </div>
                 </div>
                 
-                <form onSubmit={handleSubmit} className="max-w-md mx-auto">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={userInput}
-                      onChange={(e) => setUserInput(e.target.value)}
-                      className="flex-1 px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary-500"
-                      placeholder="Type your answer..."
-                      autoFocus
-                    />
-                    <button
-                      type="submit"
-                      className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
-                    >
-                      Submit
-                    </button>
-                  </div>
-                </form>
-                
-                {gameState.comboCount > 1 && (
-                  <div className="mt-4 text-green-600 font-medium">
-                    {gameState.comboCount} words combo! +{gameState.comboCount * 5} points
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <h2 className="text-2xl font-bold mb-4">Game Over!</h2>
-                <p className="text-lg mb-6">
-                  Your final score: <span className="font-bold text-primary-600">{gameState.score}</span>
-                </p>
-                <Link
-                  to="/games"
-                  className="px-6 py-3 bg-primary-600 text-white rounded-md hover:bg-primary-700"
-                >
-                  Play Again
-                </Link>
+                <div className="mt-6">
+                  <form onSubmit={handleSubmit}>
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={userInput}
+                        onChange={(e) => setUserInput(e.target.value)}
+                        placeholder="Type your answer here"
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary-500"
+                        autoFocus
+                      />
+                      <button
+                        type="submit"
+                        className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+                      >
+                        Submit
+                      </button>
+                    </div>
+                  </form>
+                </div>
               </div>
             )}
+            
+            <div className="flex justify-between">
+              <button
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                onClick={() => navigate({ to: '/games' })}
+              >
+                Exit Game
+              </button>
+              <button
+                className="px-4 py-2 bg-primary-600 text-white rounded hover:bg-primary-700"
+                onClick={handleEndGame}
+              >
+                Finish Game
+              </button>
+            </div>
           </div>
-          
-          <div className="mt-6 flex justify-between">
+        );
+      case 'word-search':
+        return (
+          <WordSearch 
+            yearGroup={selectedProfile?.yearGroup || 3} 
+            difficulty={gameState?.difficulty || 'easy'} 
+          />
+        );
+      default:
+        return (
+          <div className="text-center py-8">
+            <h2 className="text-2xl font-bold mb-4">Game Not Found</h2>
+            <p className="text-gray-600 mb-6">The game type "{gameType}" is not available.</p>
+            
             <button
-              onClick={handleEndGame}
-              className="px-4 py-2 text-sm text-red-600 hover:text-red-800"
-              disabled={gameOver}
+              className="px-6 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700"
+              onClick={() => navigate({ to: '/games' })}
             >
-              End Game
+              Back to Games
             </button>
-            <Link 
-              to="/dashboard"
-              className="px-4 py-2 text-sm text-gray-600 hover:text-primary-600"
-            >
-              Back to Dashboard
-            </Link>
           </div>
-        </div>
-      </div>
-    );
-  }
+        );
+    }
+  };
   
-  // Default case - unsupported game type
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
-      <p className="text-lg text-gray-700 mb-4">Game type not supported: {gameType}</p>
-      <Link 
-        to="/games"
-        className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700"
-      >
-        Back to Games
-      </Link>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="container mx-auto px-4">
+        {renderGameComponent()}
+      </div>
     </div>
   );
 }

@@ -5,14 +5,14 @@
  * Provides an interface for starting games, processing input, and managing game state.
  */
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import { GameEngine } from '../game/core/GameEngine';
-import { 
+import type { 
   GameConfig, 
   GameSession, 
-  GameResult, 
-  GamePatternType 
+  GameResult
 } from '../game/core/types';
+import { GamePatternType } from '../game/core/types';
 import { AnagramsPattern } from '../game/patterns/AnagramsPattern';
 
 // Create and configure the game engine
@@ -42,7 +42,7 @@ export const useGameEngine = () => {
       // Update config with profile ID if available
       const updatedConfig = {
         ...config,
-        profileId: localStorage.getItem('selectedProfileId') || ''
+        profileId: typeof window !== 'undefined' ? localStorage.getItem('selectedProfileId') || '' : ''
       };
       
       // Start the game session

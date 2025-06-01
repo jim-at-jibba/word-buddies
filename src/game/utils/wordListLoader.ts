@@ -5,7 +5,8 @@
  * Supports different year groups and caching for performance.
  */
 
-import { Word, WordDifficulty } from '../core/types';
+import type { Word } from '../core/types';
+import { WordDifficulty } from '../core/types';
 
 // Cache for loaded word lists to improve performance
 const wordListCache: Record<string, Word[]> = {};

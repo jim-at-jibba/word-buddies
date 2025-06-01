@@ -5,9 +5,9 @@
  * Uses the game engine hook to manage game sessions.
  */
 
-import React, { createContext, useContext, useState, ReactNode } from 'react';
+import React, { createContext, useContext, useState, type ReactNode } from 'react';
 import useGameEngine from '../hooks/useGameEngine';
-import { GameConfig, GamePatternType, GameResult, GameSession, WordDifficulty } from '../game/core/types';
+import type { GameConfig, GamePatternType, GameResult, GameSession } from '../game/core/types';
 
 // Define the context type
 interface GameContextType {
@@ -49,9 +49,12 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   
   // Game history state
   const [gameHistory, setGameHistory] = useState<GameResult[]>(() => {
-    // Load game history from local storage
-    const savedHistory = localStorage.getItem('gameHistory');
-    return savedHistory ? JSON.parse(savedHistory) : [];
+    // Load game history from local storage if in browser environment
+    if (typeof window !== 'undefined') {
+      const savedHistory = localStorage.getItem('gameHistory');
+      return savedHistory ? JSON.parse(savedHistory) : [];
+    }
+    return [];
   });
   
   // Add a game result to history
@@ -59,14 +62,18 @@ export const GameProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const updatedHistory = [...gameHistory, result];
     setGameHistory(updatedHistory);
     
-    // Save to local storage
-    localStorage.setItem('gameHistory', JSON.stringify(updatedHistory));
+    // Save to local storage if in browser environment
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('gameHistory', JSON.stringify(updatedHistory));
+    }
   };
   
   // Clear game history
   const clearGameHistory = () => {
     setGameHistory([]);
-    localStorage.removeItem('gameHistory');
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('gameHistory');
+    }
   };
   
   // Custom end game function that adds the result to history

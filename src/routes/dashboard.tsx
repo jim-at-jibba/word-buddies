@@ -1,8 +1,8 @@
 
 import { createFileRoute, Link } from '@tanstack/react-router';
 import { useProfileContext } from '../contexts/ProfileContext';
-import { useGameContext } from '../contexts/GameContext';
-import { GamePatternType } from '../game/core/types';
+// import { useGameContext } from '../contexts/GameContext';
+// import { GamePatternType } from '../game/core/types';
 
 export const Route = createFileRoute('/dashboard')({
   component: DashboardRoute,

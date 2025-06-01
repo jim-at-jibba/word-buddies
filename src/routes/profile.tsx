@@ -1,8 +1,7 @@
 import { useState } from 'react';
-import { useProfiles } from '../hooks/useProfiles';
 import ProfileManager from '../components/profile/ProfileManager';
 import ProfileForm from '../components/profile/ProfileForm';
-import { MAX_PROFILES } from '../contexts/ProfileContext';
+import { MAX_PROFILES, useProfileContext } from '../contexts/ProfileContext';
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import type { Profile } from '@/components/profile';
 
@@ -24,21 +23,21 @@ function ProfileRoute() {
     deleteProfile,
     selectProfile,
     hasReachedMaxProfiles: maxProfilesReached
-  } = useProfiles(MAX_PROFILES);
+  } = useProfileContext();
   console.log('ProfileRoute', { profiles, selectedProfile, maxProfilesReached });
 
   // Handle profile selection
   const handleSelectProfile = async (profile: Profile) => {
     await selectProfile(profile.id);
-    // Navigate to the main app or dashboard after profile selection
-    navigate({ to: '/' });
+    // Navigate to the dashboard after profile selection
+    navigate({ to: '/dashboard' });
   };
 
   // Handle profile creation
   const handleCreateProfile = async (profileData: Omit<Profile, 'id' | 'createdAt'>) => {
     await createProfile(profileData);
-    // Navigate to the main app or dashboard after profile creation
-    navigate({ to: '/' });
+    // Navigate to the dashboard after profile creation
+    navigate({ to: '/dashboard' });
   };
 
   // Handle profile update

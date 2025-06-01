@@ -57,16 +57,34 @@ export const loadWordListForYearGroup = async (yearGroup: number): Promise<Word[
       return [];
     }
     
-    // Dynamic import of the word list based on year group
-    // Use proper file extension for dynamic imports as required by Vite
-    const wordModule = await import(`../../data/year${yearGroup}/words.js`);
-    const wordList = wordModule[`year${yearGroup}Words`] || [];
-    
-    // Convert string array to Word objects and cache
-    const words = convertToWordObjects(wordList);
-    wordListCache[cacheKey] = words;
-    
-    return words;
+    // Use a try-catch block for dynamic imports to handle errors gracefully
+    try {
+      // Dynamic import of the word list based on year group
+      const wordModule = await import(`../../data/year${yearGroup}/words.js`);
+      const wordList = wordModule[`year${yearGroup}Words`] || [];
+      
+      // Convert string array to Word objects and cache
+      const words = convertToWordObjects(wordList);
+      wordListCache[cacheKey] = words;
+      
+      return words;
+    } catch (importError) {
+      // If the .js extension fails, try without extension (for different bundlers)
+      try {
+        const wordModule = await import(`../../data/year${yearGroup}/words`);
+        const wordList = wordModule[`year${yearGroup}Words`] || [];
+        
+        // Convert string array to Word objects and cache
+        const words = convertToWordObjects(wordList);
+        wordListCache[cacheKey] = words;
+        
+        return words;
+      } catch {
+        // If both attempts fail, return an empty array
+        console.error(`No word list found for year ${yearGroup}`);
+        return [];
+      }
+    }
   } catch (error) {
     console.error(`Failed to load words for year ${yearGroup}:`, error);
     return [];

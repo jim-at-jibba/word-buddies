@@ -193,7 +193,7 @@ function GameRoute() {
             </div>
           </div>
         );
-      case 'word-search':
+      case 'wordSearch':
         return (
           <WordSearch 
             yearGroup={selectedProfile?.yearGroup || 3} 

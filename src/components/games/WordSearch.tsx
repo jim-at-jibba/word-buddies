@@ -77,7 +77,7 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
   
   // Handle mouse enter while selecting
   const handleMouseEnter = (row: number, col: number) => {
-    if (!isSelecting) return;
+    if (!isSelecting || selectedCells.length === 0) return;
     
     // Check if this cell is adjacent to the last selected cell
     const lastCell = selectedCells[selectedCells.length - 1];
@@ -87,8 +87,38 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
     const isAlreadySelected = selectedCells.some(cell => cell.row === row && cell.col === col);
     
     if (isAdjacent && !isAlreadySelected) {
+      // If we have at least 2 cells selected, ensure we're maintaining the same direction
+      if (selectedCells.length >= 2) {
+        const newPosition = { row, col };
+        if (!isValidSelectionPath([...selectedCells, newPosition])) {
+          return; // Don't add if it breaks the path
+        }
+      }
+      
       setSelectedCells([...selectedCells, { row, col }]);
     }
+  };
+  
+  // Check if the selected cells form a valid path (straight line or diagonal)
+  const isValidSelectionPath = (cells: Position[]): boolean => {
+    if (cells.length < 3) return true; // With less than 3 cells, any adjacent selection is valid
+    
+    // Get direction from first two cells
+    const rowDiff = cells[1].row - cells[0].row;
+    const colDiff = cells[1].col - cells[0].col;
+    
+    // Check that all subsequent cells follow the same direction
+    for (let i = 2; i < cells.length; i++) {
+      const currentRowDiff = cells[i].row - cells[i-1].row;
+      const currentColDiff = cells[i].col - cells[i-1].col;
+      
+      // Must maintain the same direction
+      if (currentRowDiff !== rowDiff || currentColDiff !== colDiff) {
+        return false;
+      }
+    }
+    
+    return true;
   };
   
   // Handle mouse up to complete selection
@@ -123,6 +153,11 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
     return gameState.grid[row][col].isRevealed;
   };
   
+  // Check if a word is found
+  const isWordFound = (word: string): boolean => {
+    return gameState?.foundWords?.includes(word) || false;
+  };
+  
   // Render loading state
   if (loading || !gameState) {
     return (
@@ -151,7 +186,7 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
       </div>
     );
   }
-  
+
   return (
     <div className="w-full max-w-4xl mx-auto">
       {/* Game header */}
@@ -170,12 +205,61 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
         </div>
       </div>
       
+      {/* Game content container */}
+      <div className="flex flex-col md:flex-row gap-6">
+        {/* Word list */}
+        <div className="md:w-1/4 bg-white p-4 rounded-lg shadow-md">
+          <h3 className="text-lg font-bold mb-3 text-primary-700">Words to Find:</h3>
+          <div className="flex flex-col gap-2">
+            {gameState.words?.map((word: { value: string }, index: number) => (
+              <div 
+                key={index} 
+                className={`px-3 py-2 rounded-md border ${isWordFound(word.value) 
+                  ? 'bg-green-50 border-green-200 text-green-800' 
+                  : 'bg-white border-gray-200'}`}
+              >
+                <span className={`font-medium ${isWordFound(word.value) ? 'line-through' : ''}`}>
+                  {word.value}
+                </span>
+              </div>
+            ))}
+        </div>
+        <div className="bg-primary-100 px-4 py-2 rounded-lg">
+          <span className="font-medium">Score:</span> {gameState.score || 0}
+        </div>
+      </div>
+    </div>
+
+    {/* Game content container */}
+    <div className="flex flex-col md:flex-row gap-6">
+      {/* Word list */}
+      <div className="md:w-1/4 bg-white p-4 rounded-lg shadow-md">
+        <h3 className="text-lg font-bold mb-3 text-primary-700">Words to Find:</h3>
+        <div className="flex flex-col gap-2">
+          {gameState.words?.map((word: { value: string }, index: number) => (
+            <div 
+              key={index} 
+              className={`px-3 py-2 rounded-md border ${isWordFound(word.value) 
+                ? 'bg-green-50 border-green-200 text-green-800' 
+                : 'bg-white border-gray-200'}`}
+            >
+              <span className={`font-medium ${isWordFound(word.value) ? 'line-through' : ''}`}>
+                {word.value}
+              </span>
+            </div>
+          ))}
+        </div>
+        <div className="mt-4 text-sm text-gray-600">
+          <p>Found: {gameState.foundWords?.length || 0} / {gameState.words?.length || 0}</p>
+        </div>
+      </div>
+
       {/* Game grid */}
-      <div className="mb-8 overflow-auto">
+      <div className="md:w-3/4 overflow-auto">
         <div 
           className="grid gap-1 mx-auto"
           style={{ 
-            gridTemplateColumns: `repeat(${gameState.gridSize}, minmax(30px, 40px))`,
+            gridTemplateColumns: `repeat(${gameState.gridSize || 10}, minmax(30px, 40px))`,
             touchAction: 'none' // Prevent scrolling on touch devices
           }}
           onMouseLeave={() => {
@@ -191,11 +275,13 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
                 key={`${rowIndex}-${colIndex}`}
                 className={`
                   w-full aspect-square flex items-center justify-center
-                  text-lg font-bold border rounded-md cursor-pointer
+                  text-lg font-bold border-2 rounded-md cursor-pointer
                   select-none transition-colors
-                  ${isSelected(rowIndex, colIndex) ? 'bg-primary-200 border-primary-500' : ''}
-                  ${isRevealed(rowIndex, colIndex) ? 'bg-green-100 border-green-500' : 'bg-white border-gray-200'}
-                  ${isSelecting ? 'hover:bg-gray-100' : ''}
+                  ${isSelected(rowIndex, colIndex) 
+                    ? 'bg-yellow-200 border-yellow-500 text-yellow-800' 
+                    : isRevealed(rowIndex, colIndex) 
+                      ? 'bg-green-100 border-green-500 text-green-800' 
+                      : 'bg-white border-gray-200 hover:bg-gray-50'}
                 `}
                 onMouseDown={() => handleMouseDown(rowIndex, colIndex)}
                 onMouseEnter={() => handleMouseEnter(rowIndex, colIndex)}
@@ -224,20 +310,13 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
           ))}
         </div>
       </div>
-      
-      {/* Word list */}
-      <div className="mb-6">
-        <h3 className="font-bold mb-2">Words to Find: {gameState.remainingWords} remaining</h3>
-        <div className="flex flex-wrap gap-2">
-          {gameState.foundWords?.map((word: string, index: number) => (
-            <span 
-              key={index} 
-              className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
-            >
-              {word}
-            </span>
-          ))}
+      {gameState.words?.map((word: { value: string }, index: number) => (
+        <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
+          key={index}
+        >
+          <span>{word.value}</span>
         </div>
+      ))}
       </div>
       
       {/* Controls */}

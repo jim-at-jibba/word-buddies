@@ -13,12 +13,14 @@ import type {
 } from '../game/core/types';
 import { GamePatternType } from '../game/core/types';
 import { AnagramsPattern } from '../game/patterns/AnagramsPattern';
+import { WordSearchPattern } from '../game/patterns/WordSearchPattern';
 
 // Create and configure the game engine
 const gameEngine = new GameEngine();
 
 // Register available game patterns
 gameEngine.registerPattern(new AnagramsPattern());
+gameEngine.registerPattern(new WordSearchPattern());
 // Additional patterns will be registered here as they are implemented
 
 /**
@@ -126,6 +128,7 @@ export const useGameEngine = () => {
   const getAvailablePatterns = useCallback(() => {
     return [
       { type: GamePatternType.ANAGRAMS, name: 'Anagrams' },
+      { type: GamePatternType.WORD_SEARCH, name: 'Word Search' },
       // Additional patterns will be added here as they are implemented
     ];
   }, []);

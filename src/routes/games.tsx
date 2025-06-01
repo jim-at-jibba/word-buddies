@@ -57,6 +57,7 @@ function GamesRoute() {
   // Effect: navigate only after activeSession is set and pendingNavigation is true
   useEffect(() => {
     if (pendingNavigation && activeSession && selectedPattern) {
+      // Use the pattern type directly from the enum
       navigate({ to: `/game/${selectedPattern}` });
       setPendingNavigation(false);
     }

@@ -11,8 +11,8 @@ import type {
   GameSession, 
   Word
 } from '../core/types';
-import { GamePatternType, WordDifficulty } from '../core/types';
-import { loadWordListForYearGroup, getRandomWords, filterWordsByDifficulty } from '../utils/wordListLoader';
+import { GamePatternType } from '../core/types';
+import { ScoreSystem } from '../core/ScoreSystem';
 
 // Directions for word placement
 type Direction = 'horizontal' | 'vertical' | 'diagonal-down' | 'diagonal-up';
@@ -53,27 +53,18 @@ export interface WordSearchState {
 }
 
 export class WordSearchPattern extends BaseGamePattern {
-  constructor() {
-    super(GamePatternType.WORD_SEARCH);
-  }
+  type = GamePatternType.WORD_SEARCH;
 
   /**
-   * Initialize a new word search game session
+   * Pattern-specific initialization logic
    */
-  async initialize(config: GameConfig): Promise<GameSession> {
-    // Load words for the specified year group
-    const allWords = await loadWordListForYearGroup(config.yearGroup);
-    
-    // Filter by difficulty
-    const filteredWords = filterWordsByDifficulty(allWords, config.difficulty);
-    
-    // Get random words for this game session
-    const wordCount = config.wordCount || this.getDefaultWordCount(config.difficulty);
-    const words = getRandomWords(filteredWords, wordCount);
+  protected async initializeGameState(session: GameSession, _config: GameConfig): Promise<GameSession> {
+    // Use the words already loaded by the BaseGamePattern
+    const words = session.gameState.words;
     
     // Create the word search grid
     const gridSize = this.calculateGridSize(words);
-    const { grid, placedWords } = this.createWordSearchGrid(words, gridSize);
+    const { grid } = this.createWordSearchGrid(words, gridSize);
     
     // Initialize the game state
     const gameState: WordSearchState = {
@@ -88,14 +79,10 @@ export class WordSearchPattern extends BaseGamePattern {
       selectedCells: []
     };
     
-    // Create and return the game session
+    // Return the updated session
     return {
-      id: `wordsearch-${Date.now()}`,
-      patternType: this.type,
-      config,
-      gameState,
-      startTime: Date.now(),
-      score: 0
+      ...session,
+      gameState
     };
   }
 
@@ -103,13 +90,12 @@ export class WordSearchPattern extends BaseGamePattern {
    * Process user input for the word search game
    * Input is an array of selected cell positions
    */
-  processInput(session: GameSession, input: Position[]): GameSession {
-    const state = session.gameState as WordSearchState;
+  protected processGameInput(gameState: WordSearchState, input: Position[]): WordSearchState {
     const now = Date.now();
     
     // Update selected cells
     const updatedState = {
-      ...state,
+      ...gameState,
       selectedCells: input,
       lastActionTime: now
     };
@@ -134,47 +120,30 @@ export class WordSearchPattern extends BaseGamePattern {
         updatedState.comboCount += 1;
         
         // Calculate time taken for this word
-        const timeTaken = (now - (state.lastActionTime || state.startTime)) / 1000;
+        const timeTaken = (now - (gameState.lastActionTime || gameState.startTime)) / 1000;
         
         // Calculate score for this word
         const word = updatedState.words[wordIndex];
-        const wordScore = this.scoreCalculator.calculateWordScore(
+        const wordScore = ScoreSystem.calculateWordScore(
           word,
-          timeTaken,
-          updatedState.comboCount
+          timeTaken
         );
         
+        // Add combo bonus
+        const comboBonus = ScoreSystem.calculateComboBonus(updatedState.comboCount);
+        
         // Update total score
-        updatedState.score += wordScore;
+        updatedState.score += wordScore + comboBonus;
         
         // Clear selected cells after finding a word
         updatedState.selectedCells = [];
       }
     }
     
-    // Check if game is complete
-    if (this.isComplete({ ...session, gameState: updatedState })) {
-      updatedState.endTime = now;
-      
-      // Add completion bonus
-      const completionTime = (now - state.startTime) / 1000;
-      const completionBonus = this.scoreCalculator.calculateCompletionBonus(
-        updatedState.words,
-        completionTime,
-        updatedState.foundWords.length,
-        0
-      );
-      
-      updatedState.score += completionBonus;
-    }
+    // We don't check for game completion here as that's handled by the BaseGamePattern
     
-    // Return updated session
-    return {
-      ...session,
-      gameState: updatedState,
-      score: updatedState.score,
-      endTime: updatedState.endTime
-    };
+    // Return updated game state
+    return updatedState;
   }
 
   /**
@@ -366,7 +335,7 @@ export class WordSearchPattern extends BaseGamePattern {
     startPos: Position,
     direction: Direction,
     wordIndex: number,
-    force = false
+    _force = false
   ): void {
     const { row, col } = startPos;
     
@@ -461,6 +430,11 @@ export class WordSearchPattern extends BaseGamePattern {
       return null;
     }
     
+    // Verify the selection forms a continuous line (straight or diagonal)
+    if (!this.isValidSelectionPath(state.selectedCells)) {
+      return null;
+    }
+    
     // Get letters from selected cells
     const letters = state.selectedCells.map(pos => 
       state.grid[pos.row][pos.col].letter
@@ -469,25 +443,48 @@ export class WordSearchPattern extends BaseGamePattern {
     // Join letters to form a word
     const word = letters.join('');
     
-    // Check if this is a valid word in our list
-    const isValidWord = state.words.some(w => w.value === word);
+    // Also check the reverse direction
+    const reversedWord = [...letters].reverse().join('');
     
-    return isValidWord ? word : null;
+    // Check if this is a valid word in our list (in either direction)
+    const forwardMatch = state.words.find(w => w.value === word);
+    const reverseMatch = state.words.find(w => w.value === reversedWord);
+    
+    if (forwardMatch) {
+      return word;
+    } else if (reverseMatch) {
+      return reversedWord;
+    }
+    
+    return null;
+  }
+  
+  /**
+   * Check if the selected cells form a valid path (straight line or diagonal)
+   */
+  private isValidSelectionPath(cells: Position[]): boolean {
+    if (cells.length < 2) return false;
+    
+    // Get direction from first two cells
+    const rowDiff = cells[1].row - cells[0].row;
+    const colDiff = cells[1].col - cells[0].col;
+    
+    // If both are 0, cells are the same (invalid)
+    if (rowDiff === 0 && colDiff === 0) return false;
+    
+    // Check that all subsequent cells follow the same direction
+    for (let i = 2; i < cells.length; i++) {
+      const currentRowDiff = cells[i].row - cells[i-1].row;
+      const currentColDiff = cells[i].col - cells[i-1].col;
+      
+      // Must maintain the same direction
+      if (currentRowDiff !== rowDiff || currentColDiff !== colDiff) {
+        return false;
+      }
+    }
+    
+    return true;
   }
 
-  /**
-   * Get default word count based on difficulty
-   */
-  private getDefaultWordCount(difficulty: WordDifficulty): number {
-    switch (difficulty) {
-      case WordDifficulty.EASY:
-        return 5;
-      case WordDifficulty.MEDIUM:
-        return 8;
-      case WordDifficulty.HARD:
-        return 12;
-      default:
-        return 8;
-    }
-  }
+
 }

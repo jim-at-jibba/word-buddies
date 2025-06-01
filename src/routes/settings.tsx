@@ -1,13 +1,7 @@
-// This file is prepared for when the settings route is added to the router
-// Currently commented out to avoid TypeScript errors
-/*
 import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import ProfileSettings from '../components/profile/ProfileSettings';
 import { useProfileContext } from '../contexts/ProfileContext';
 
-// This file is prepared for when the settings route is added to the router
-// Currently commented out to avoid TypeScript errors
-/*
 export const Route = createFileRoute('/settings')({
   component: SettingsPage,
 });
@@ -41,4 +35,4 @@ function SettingsPage() {
     </div>
   );
 }
-*/
+

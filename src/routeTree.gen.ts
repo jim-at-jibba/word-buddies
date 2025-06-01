@@ -15,10 +15,6 @@ import { Route as SettingsImport } from './routes/settings'
 import { Route as ProfileImport } from './routes/profile'
 import { Route as DashboardImport } from './routes/dashboard'
 import { Route as IndexImport } from './routes/index'
-import { Route as DemoStoreImport } from './routes/demo.store'
-import { Route as DemoStartServerFuncsImport } from './routes/demo.start.server-funcs'
-import { Route as DemoStartApiRequestImport } from './routes/demo.start.api-request'
-import { Route as DemoSentryTestingImport } from './routes/demo.sentry.testing'
 
 // Create/Update Routes
 
@@ -43,30 +39,6 @@ const DashboardRoute = DashboardImport.update({
 const IndexRoute = IndexImport.update({
   id: '/',
   path: '/',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const DemoStoreRoute = DemoStoreImport.update({
-  id: '/demo/store',
-  path: '/demo/store',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const DemoStartServerFuncsRoute = DemoStartServerFuncsImport.update({
-  id: '/demo/start/server-funcs',
-  path: '/demo/start/server-funcs',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const DemoStartApiRequestRoute = DemoStartApiRequestImport.update({
-  id: '/demo/start/api-request',
-  path: '/demo/start/api-request',
-  getParentRoute: () => rootRoute,
-} as any)
-
-const DemoSentryTestingRoute = DemoSentryTestingImport.update({
-  id: '/demo/sentry/testing',
-  path: '/demo/sentry/testing',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -102,34 +74,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SettingsImport
       parentRoute: typeof rootRoute
     }
-    '/demo/store': {
-      id: '/demo/store'
-      path: '/demo/store'
-      fullPath: '/demo/store'
-      preLoaderRoute: typeof DemoStoreImport
-      parentRoute: typeof rootRoute
-    }
-    '/demo/sentry/testing': {
-      id: '/demo/sentry/testing'
-      path: '/demo/sentry/testing'
-      fullPath: '/demo/sentry/testing'
-      preLoaderRoute: typeof DemoSentryTestingImport
-      parentRoute: typeof rootRoute
-    }
-    '/demo/start/api-request': {
-      id: '/demo/start/api-request'
-      path: '/demo/start/api-request'
-      fullPath: '/demo/start/api-request'
-      preLoaderRoute: typeof DemoStartApiRequestImport
-      parentRoute: typeof rootRoute
-    }
-    '/demo/start/server-funcs': {
-      id: '/demo/start/server-funcs'
-      path: '/demo/start/server-funcs'
-      fullPath: '/demo/start/server-funcs'
-      preLoaderRoute: typeof DemoStartServerFuncsImport
-      parentRoute: typeof rootRoute
-    }
   }
 }
 
@@ -140,10 +84,6 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
-  '/demo/store': typeof DemoStoreRoute
-  '/demo/sentry/testing': typeof DemoSentryTestingRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
 }
 
 export interface FileRoutesByTo {
@@ -151,10 +91,6 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
-  '/demo/store': typeof DemoStoreRoute
-  '/demo/sentry/testing': typeof DemoSentryTestingRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
 }
 
 export interface FileRoutesById {
@@ -163,43 +99,14 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/profile': typeof ProfileRoute
   '/settings': typeof SettingsRoute
-  '/demo/store': typeof DemoStoreRoute
-  '/demo/sentry/testing': typeof DemoSentryTestingRoute
-  '/demo/start/api-request': typeof DemoStartApiRequestRoute
-  '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
 }
 
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/dashboard'
-    | '/profile'
-    | '/settings'
-    | '/demo/store'
-    | '/demo/sentry/testing'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
+  fullPaths: '/' | '/dashboard' | '/profile' | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/dashboard'
-    | '/profile'
-    | '/settings'
-    | '/demo/store'
-    | '/demo/sentry/testing'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
-  id:
-    | '__root__'
-    | '/'
-    | '/dashboard'
-    | '/profile'
-    | '/settings'
-    | '/demo/store'
-    | '/demo/sentry/testing'
-    | '/demo/start/api-request'
-    | '/demo/start/server-funcs'
+  to: '/' | '/dashboard' | '/profile' | '/settings'
+  id: '__root__' | '/' | '/dashboard' | '/profile' | '/settings'
   fileRoutesById: FileRoutesById
 }
 
@@ -208,10 +115,6 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   ProfileRoute: typeof ProfileRoute
   SettingsRoute: typeof SettingsRoute
-  DemoStoreRoute: typeof DemoStoreRoute
-  DemoSentryTestingRoute: typeof DemoSentryTestingRoute
-  DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
-  DemoStartServerFuncsRoute: typeof DemoStartServerFuncsRoute
 }
 
 const rootRouteChildren: RootRouteChildren = {
@@ -219,10 +122,6 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   ProfileRoute: ProfileRoute,
   SettingsRoute: SettingsRoute,
-  DemoStoreRoute: DemoStoreRoute,
-  DemoSentryTestingRoute: DemoSentryTestingRoute,
-  DemoStartApiRequestRoute: DemoStartApiRequestRoute,
-  DemoStartServerFuncsRoute: DemoStartServerFuncsRoute,
 }
 
 export const routeTree = rootRoute
@@ -238,11 +137,7 @@ export const routeTree = rootRoute
         "/",
         "/dashboard",
         "/profile",
-        "/settings",
-        "/demo/store",
-        "/demo/sentry/testing",
-        "/demo/start/api-request",
-        "/demo/start/server-funcs"
+        "/settings"
       ]
     },
     "/": {
@@ -256,18 +151,6 @@ export const routeTree = rootRoute
     },
     "/settings": {
       "filePath": "settings.tsx"
-    },
-    "/demo/store": {
-      "filePath": "demo.store.tsx"
-    },
-    "/demo/sentry/testing": {
-      "filePath": "demo.sentry.testing.tsx"
-    },
-    "/demo/start/api-request": {
-      "filePath": "demo.start.api-request.tsx"
-    },
-    "/demo/start/server-funcs": {
-      "filePath": "demo.start.server-funcs.tsx"
     }
   }
 }

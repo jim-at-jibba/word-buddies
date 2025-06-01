@@ -34,13 +34,12 @@ export interface Profile {
 }
 
 // Define the component props
-export interface ProfileCardProps
-  extends React.HTMLAttributes<HTMLDivElement>,
-    VariantProps<typeof profileCardVariants> {
+interface ProfileCardProps extends Omit<React.HTMLAttributes<HTMLDivElement>, 'onSelect'> {
   profile: Profile;
   onSelect?: (profile: Profile) => void;
   onEdit?: (profile: Profile) => void;
   onDelete?: (profile: Profile) => void;
+  selected?: boolean;
 }
 
 // Create the ProfileCard component

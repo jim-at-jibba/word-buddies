@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Profile } from './ProfileCard';
+import type { Profile } from './ProfileCard';
 import ProfileSelector from './ProfileSelector';
 import ProfileForm from './ProfileForm';
 
@@ -13,6 +13,7 @@ interface ProfileManagerProps {
   onUpdateProfile: (profileId: string, profileData: Partial<Profile>) => void;
   onDeleteProfile: (profileId: string) => void;
   maxProfiles?: number;
+  hasReachedMaxProfiles?: boolean;
 }
 
 const ProfileManager: React.FC<ProfileManagerProps> = ({
@@ -23,6 +24,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
   onUpdateProfile,
   onDeleteProfile,
   maxProfiles = 10,
+  hasReachedMaxProfiles,
 }) => {
   const [mode, setMode] = useState<ProfileManagerMode>('select');
   const [profileToEdit, setProfileToEdit] = useState<Profile | null>(null);
@@ -60,7 +62,7 @@ const ProfileManager: React.FC<ProfileManagerProps> = ({
           onSelectProfile={onSelectProfile}
           onEditProfile={handleEditProfile}
           onDeleteProfile={(profile) => onDeleteProfile(profile.id)}
-          onCreateProfile={profiles.length < maxProfiles ? handleCreateProfile : undefined}
+          onCreateProfile={hasReachedMaxProfiles ? undefined : handleCreateProfile}
           maxProfiles={maxProfiles}
         />
       )}

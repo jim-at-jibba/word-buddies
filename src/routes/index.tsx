@@ -1,39 +1,35 @@
-import { createFileRoute } from '@tanstack/react-router'
-import logo from '../logo.svg'
+import { createFileRoute, redirect } from '@tanstack/react-router'
+import { useProfileContext } from '../contexts/ProfileContext'
 
-export const Route = createFileRoute('/')({
+export const Route = createFileRoute('/')({  
+  beforeLoad: () => {
+    // This will run on both server and client
+    return { meta: { title: 'Word Buddies' } }
+  },
+  loader: () => {
+    // This will only run on the client
+    return null
+  },
   component: App,
 })
 
 function App() {
-  return (
-    <div className="text-center">
-      <header className="min-h-screen flex flex-col items-center justify-center bg-[#282c34] text-white text-[calc(10px+2vmin)]">
-        <img
-          src={logo}
-          className="h-[40vmin] pointer-events-none animate-[spin_20s_linear_infinite]"
-          alt="logo"
-        />
-        <p>
-          Edit <code>src/routes/index.tsx</code> and save to reload.
-        </p>
-        <a
-          className="text-[#61dafb] hover:underline"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-        <a
-          className="text-[#61dafb] hover:underline"
-          href="https://tanstack.com"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn TanStack
-        </a>
-      </header>
-    </div>
-  )
+  const { selectedProfile, loading } = useProfileContext();
+  
+  // If loading, show a loading indicator
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-500"></div>
+      </div>
+    );
+  }
+  
+  // If a profile is selected, redirect to dashboard
+  if (selectedProfile) {
+    throw redirect({ to: '/dashboard' });
+  }
+  
+  // Otherwise, redirect to profile selection
+  throw redirect({ to: '/profile' });
 }

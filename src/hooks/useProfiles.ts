@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { Profile } from '../components/profile';
+import type { Profile } from '../components/profile';
 import * as profileService from '../services/profileService';
 
 interface UseProfilesReturn {

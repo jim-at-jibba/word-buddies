@@ -11,7 +11,7 @@ import type {
   GameSession, 
   Word
 } from '../core/types';
-import { GamePatternType } from '../core/types';
+import { GamePatternType, WordDifficulty } from '../core/types';
 import { ScoreSystem } from '../core/ScoreSystem';
 
 // Directions for word placement
@@ -53,6 +53,9 @@ export interface WordSearchState {
   correctWords?: string[];
   incorrectWords?: string[];
   timeSpent?: number;
+  completed?: boolean;
+  difficulty?: WordDifficulty;
+  totalWords?: number;
 }
 
 export class WordSearchPattern extends BaseGamePattern {
@@ -79,7 +82,12 @@ export class WordSearchPattern extends BaseGamePattern {
       startTime: Date.now(),
       score: 0,
       comboCount: 0,
-      selectedCells: []
+      selectedCells: [],
+      correctWords: [],
+      incorrectWords: [],
+      totalWords: words.length,
+      difficulty: session.gameState?.difficulty || WordDifficulty.MEDIUM,
+      completed: false
     };
     
     // Return the updated session
@@ -91,19 +99,39 @@ export class WordSearchPattern extends BaseGamePattern {
 
   /**
    * Process user input for the word search game
-   * Input is an array of selected cell positions or a time update object
+   * Input is an array of selected cell positions or a time update/game completion object
    */
-  protected processGameInput(gameState: WordSearchState, input: Position[] | { type: string, timeElapsed: number }): WordSearchState {
+  protected processGameInput(gameState: WordSearchState, input: Position[] | { type: string, timeElapsed: number, finalUpdate?: boolean }): WordSearchState {
     const now = Date.now();
     
     // Handle time update
-    if (input && typeof input === 'object' && 'type' in input && input.type === 'UPDATE_TIME') {
-      // Update the game state with the current time elapsed
-      return {
-        ...gameState,
-        endTime: now,
-        timeSpent: input.timeElapsed
-      };
+    if (input && typeof input === 'object' && 'type' in input) {
+      if (input.type === 'UPDATE_TIME' || input.type === 'COMPLETE_GAME') {
+        // Initialize correctWords array if it doesn't exist
+        if (!gameState.correctWords) {
+          gameState.correctWords = [];
+        }
+        
+        // Initialize incorrectWords array if it doesn't exist
+        if (!gameState.incorrectWords) {
+          gameState.incorrectWords = [];
+        }
+        
+        // If this is a final update or game completion, ensure we have all found words in correctWords
+        if (input.finalUpdate || input.type === 'COMPLETE_GAME') {
+          // Make sure all found words are in correctWords
+          gameState.correctWords = [...gameState.foundWords];
+        }
+        
+        // Update the game state with the current time elapsed
+        return {
+          ...gameState,
+          endTime: now,
+          timeSpent: input.timeElapsed,
+          correctWords: gameState.correctWords,
+          incorrectWords: gameState.incorrectWords || []
+        };
+      }
     }
     
     // Handle cell selection (input is Position[])
@@ -114,7 +142,9 @@ export class WordSearchPattern extends BaseGamePattern {
       ...gameState,
       selectedCells: cellPositions,
       lastActionTime: now,
-      endTime: now // Always update end time for accurate time tracking
+      endTime: now, // Always update end time for accurate time tracking
+      correctWords: gameState.correctWords || [],
+      incorrectWords: gameState.incorrectWords || []
     };
     
     // Check if the selection forms a valid word
@@ -129,9 +159,6 @@ export class WordSearchPattern extends BaseGamePattern {
         updatedState.foundWordIndices = [...updatedState.foundWordIndices, wordIndex];
         
         // Add to correctWords array for game results
-        if (!updatedState.correctWords) {
-          updatedState.correctWords = [];
-        }
         updatedState.correctWords = [...updatedState.correctWords, selectedWord];
         
         // Mark cells as revealed
@@ -163,7 +190,10 @@ export class WordSearchPattern extends BaseGamePattern {
       }
     }
     
-    // We don't check for game completion here as that's handled by the BaseGamePattern
+    // Check if all words have been found and mark as completed
+    if (updatedState.foundWords.length === updatedState.words.length) {
+      updatedState.completed = true;
+    }
     
     // Return updated game state
     return updatedState;

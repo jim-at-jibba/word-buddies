@@ -4,7 +4,7 @@
  * Renders a word search game interface where players can find words in a grid.
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from '@tanstack/react-router';
 import { useGameEngine } from '../../hooks/useGameEngine';
 import { GamePatternType, WordDifficulty } from '../../game/core/types';
@@ -51,28 +51,46 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
     
     const timer = setInterval(() => {
       setTimeElapsed(prev => prev + 1);
-      
-      // Update the game state with the current time elapsed
-      // We do this inside the interval to avoid dependency on timeElapsed
-      if (gameState && !gameState.completed) {
-        processInput({ type: 'UPDATE_TIME', timeElapsed: timeElapsed + 1 });
-      }
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [gameState, processInput]);
+  }, [gameState]);
   
+  // Use a ref to track the last time we updated the game state
+  const lastTimeUpdateRef = useRef(0);
+  
+  // Update time in game state periodically (not on every tick to avoid performance issues)
+  useEffect(() => {
+    if (!gameState || gameState.completed) return;
+    
+    // Only update every 5 seconds to avoid too many updates
+    const timeSinceLastUpdate = timeElapsed - lastTimeUpdateRef.current;
+    if (timeSinceLastUpdate >= 5) {
+      lastTimeUpdateRef.current = timeElapsed;
+      processInput({ type: 'UPDATE_TIME', timeElapsed });
+    }
+  }, [gameState, timeElapsed, processInput]);
+  
+  
+  // Use a ref to track if we've already processed game completion
+  const gameCompletedRef = useRef(false);
   
   // Navigate to results when game is complete
   useEffect(() => {
-    if (gameState?.completed) {
+    if (gameState?.completed && !gameCompletedRef.current) {
+      // Set the ref to prevent this from running again
+      gameCompletedRef.current = true;
+      
+      // Make sure we have the latest time before ending the game
+      processInput({ type: 'UPDATE_TIME', timeElapsed, finalUpdate: true });
+      
       // End the game properly to save results
       const result = endGame();
       if (result) {
         navigate({ to: '/game-result' });
       }
     }
-  }, [gameState, navigate, endGame]);
+  }, [gameState, navigate, endGame, processInput, timeElapsed]);
   
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {
@@ -170,6 +188,23 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
     return gameState?.foundWords?.includes(word) || false;
   };
   
+  // Handle game completion manually
+  const handleCompleteGame = () => {
+    if (gameState && !gameState.completed && !gameCompletedRef.current) {
+      // Set the ref to prevent this from running again
+      gameCompletedRef.current = true;
+      
+      // Update the game state with final time
+      processInput({ type: 'COMPLETE_GAME', timeElapsed });
+      
+      // End the game properly to save results
+      const result = endGame();
+      if (result) {
+        navigate({ to: '/game-result' });
+      }
+    }
+  };
+  
   // Render loading state
   if (loading || !gameState) {
     return (
@@ -208,6 +243,14 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
           <p className="text-gray-600">Find all the hidden words in the grid</p>
         </div>
         <div className="flex items-center gap-4">
+          {gameState.foundWords.length === gameState.words.length ? (
+            <button
+              onClick={handleCompleteGame}
+              className="px-3 py-1 bg-green-600 text-white rounded-md text-sm hover:bg-green-700 transition-colors"
+            >
+              Complete Game
+            </button>
+          ) : null}
           <div className="bg-gray-100 px-4 py-2 rounded-lg">
             <span className="font-medium">Time:</span> {formatTime(timeElapsed)}
           </div>

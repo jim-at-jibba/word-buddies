@@ -25,9 +25,18 @@ interface AnagramGameState {
   timeLimit: number;
   startTime: number;
   comboCount: number;
+  score: number;
 }
 
 export class AnagramsPattern extends BaseGamePattern {
+  /**
+   * Override getScore to use accumulated score in gameState
+   */
+  getScore(session: GameSession): number {
+    const gameState = session.gameState as AnagramGameState;
+    return gameState.score || 0;
+  }
+
   type = GamePatternType.ANAGRAMS;
   
   /**
@@ -79,15 +88,16 @@ export class AnagramsPattern extends BaseGamePattern {
         gameState.words[currentIndex],
         timeTaken
       );
-      
       // Increase combo count for consecutive correct answers
       const comboCount = gameState.comboCount + 1;
       const comboBonus = ScoreSystem.calculateComboBonus(comboCount);
-      
+      // Accumulate score in gameState
+      const newScore = (gameState.score || 0) + wordScore + comboBonus;
       updatedGameState = {
         ...this.addCorrectWord(gameState, currentWord),
         comboCount,
-        startTime: Date.now() // Reset timer for next word
+        startTime: Date.now(), // Reset timer for next word
+        score: newScore
       };
     } else {
       // Reset combo count for incorrect answer

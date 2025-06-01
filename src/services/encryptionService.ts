@@ -1,7 +1,10 @@
 /**
  * Encryption Service
  * Handles encryption and decryption of sensitive data using Web Crypto API
- * Implements AES-256 encryption as specified in the requirements
+ * Implements AES-256-GCM encryption as specified in the requirements
+ * 
+ * This service provides a secure way to encrypt and decrypt sensitive user data
+ * before storing it in the browser's local storage or IndexedDB.
  */
 
 // Constants for encryption
@@ -154,4 +157,83 @@ export function isCryptoAvailable(): boolean {
   return typeof crypto !== 'undefined' && 
          typeof crypto.subtle !== 'undefined' && 
          typeof crypto.getRandomValues !== 'undefined';
+}
+
+/**
+ * Checks if a string appears to be encrypted (base64 format)
+ * @param value - The string to check
+ * @returns True if the string appears to be encrypted
+ */
+export function isEncrypted(value: string): boolean {
+  // Check if the value is a string and matches base64 pattern
+  return typeof value === 'string' && 
+         /^[A-Za-z0-9+/=]+$/.test(value) && 
+         value.length > 24; // Minimum length for our encrypted format
+}
+
+/**
+ * Safely encrypts a value, handling non-string values
+ * @param value - The value to encrypt
+ * @param password - The password to use for encryption
+ * @returns The encrypted value or the original value if encryption fails
+ */
+export async function safeEncrypt(value: any, password: string): Promise<any> {
+  if (value === null || value === undefined) {
+    return value;
+  }
+  
+  try {
+    // Convert non-string values to JSON strings
+    const stringValue = typeof value === 'string' ? value : JSON.stringify(value);
+    return await encrypt(stringValue, password);
+  } catch (error) {
+    console.error('Safe encryption error:', error);
+    return value; // Return original value if encryption fails
+  }
+}
+
+/**
+ * Safely decrypts a value, handling non-encrypted values
+ * @param value - The value to decrypt
+ * @param password - The password to use for decryption
+ * @returns The decrypted value or the original value if decryption fails
+ */
+export async function safeDecrypt(value: any, password: string): Promise<any> {
+  if (value === null || value === undefined || !isEncrypted(value)) {
+    return value;
+  }
+  
+  try {
+    const decrypted = await decrypt(value, password);
+    
+    // Try to parse as JSON if it looks like a JSON string
+    if (typeof decrypted === 'string') {
+      // Check if it's a JSON object or array
+      if ((decrypted.startsWith('{') && decrypted.endsWith('}')) || 
+          (decrypted.startsWith('[') && decrypted.endsWith(']'))) {
+        try {
+          return JSON.parse(decrypted);
+        } catch {
+          // If parsing fails, return as string
+          return decrypted;
+        }
+      }
+      
+      // Handle primitive types that were stringified
+      // Try to convert back to number if it looks like a number
+      if (/^-?\d+(\.\d+)?$/.test(decrypted)) {
+        const num = Number(decrypted);
+        return isNaN(num) ? decrypted : num;
+      }
+      
+      // Try to convert back to boolean if it's 'true' or 'false'
+      if (decrypted === 'true') return true;
+      if (decrypted === 'false') return false;
+    }
+    
+    return decrypted;
+  } catch (error) {
+    console.warn('Safe decryption error:', error);
+    return value; // Return original value if decryption fails
+  }
 }

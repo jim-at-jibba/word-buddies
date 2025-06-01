@@ -32,6 +32,8 @@ const getEncryptionPassword = (): string => {
 
 /**
  * Encrypt sensitive profile data
+ * @param profile - The profile to encrypt
+ * @returns A copy of the profile with sensitive data encrypted
  */
 const encryptProfileData = async (profile: Profile): Promise<Profile> => {
   try {
@@ -45,11 +47,25 @@ const encryptProfileData = async (profile: Profile): Promise<Profile> => {
     // Create a copy of the profile with sensitive data encrypted
     const encryptedProfile = { ...profile };
     
-    // Encrypt sensitive data
-    encryptedProfile.name = await encryptionService.encrypt(profile.name, password);
+    // Encrypt all sensitive data
+    encryptedProfile.name = await encryptionService.safeEncrypt(profile.name, password);
+    encryptedProfile.yearGroup = await encryptionService.safeEncrypt(profile.yearGroup, password);
     
-    // If there are any additional sensitive fields, encrypt them here
-    // For example, if we add more sensitive data in the future
+    // For Date objects, we'll store them as-is to maintain type compatibility
+    // This approach avoids TypeScript errors while still allowing us to work with Date objects
+    // The actual sensitive data (name, yearGroup) is still encrypted
+    
+    // We're not encrypting dates since they're not considered sensitive personal information
+    // in this context, and it simplifies working with the data
+    if (profile.createdAt instanceof Date) {
+      encryptedProfile.createdAt = profile.createdAt;
+    }
+    
+    if (profile.lastUsed instanceof Date) {
+      encryptedProfile.lastUsed = profile.lastUsed;
+    }
+    
+    // The ID is kept unencrypted as it's used as the database key
     
     return encryptedProfile;
   } catch (error) {
@@ -60,6 +76,8 @@ const encryptProfileData = async (profile: Profile): Promise<Profile> => {
 
 /**
  * Decrypt sensitive profile data
+ * @param encryptedProfile - The encrypted profile to decrypt
+ * @returns A copy of the profile with sensitive data decrypted
  */
 const decryptProfileData = async (encryptedProfile: Profile): Promise<Profile> => {
   try {
@@ -73,26 +91,34 @@ const decryptProfileData = async (encryptedProfile: Profile): Promise<Profile> =
     // Create a copy of the profile with sensitive data decrypted
     const decryptedProfile = { ...encryptedProfile };
     
-    // Helper function to safely decrypt a potentially encrypted string
-    const safeDecrypt = async (value: string): Promise<string> => {
-      // Check if the value is encrypted (starts with base64 characters)
-      if (typeof value === 'string' && /^[A-Za-z0-9+/=]/.test(value)) {
-        try {
-          return await encryptionService.decrypt(value, password);
-        } catch (e) {
-          // If decryption fails, it might not be encrypted
-          console.warn('Failed to decrypt value, might not be encrypted');
-          return value;
-        }
+    // Decrypt all sensitive data
+    decryptedProfile.name = await encryptionService.safeDecrypt(decryptedProfile.name, password);
+    decryptedProfile.yearGroup = await encryptionService.safeDecrypt(decryptedProfile.yearGroup, password);
+    
+    // Ensure date objects are properly handled
+    try {
+      // If dates were stored as strings (from older versions or serialization), convert them back to Date objects
+      if (decryptedProfile.createdAt && !(decryptedProfile.createdAt instanceof Date)) {
+        decryptedProfile.createdAt = new Date(decryptedProfile.createdAt);
       }
-      return value;
-    };
+      
+      if (decryptedProfile.lastUsed && !(decryptedProfile.lastUsed instanceof Date)) {
+        decryptedProfile.lastUsed = new Date(decryptedProfile.lastUsed);
+      }
+    } catch (e) {
+      console.warn('Error handling date objects:', e);
+    }
     
-    // Decrypt sensitive data
-    decryptedProfile.name = await safeDecrypt(decryptedProfile.name);
+    // Validate the decrypted profile
+    if (!decryptedProfile.name || typeof decryptedProfile.name !== 'string') {
+      console.warn('Invalid decrypted profile name, using fallback');
+      decryptedProfile.name = 'Unknown User';
+    }
     
-    // If there are any additional sensitive fields, decrypt them here
-    // For example, if we add more sensitive data in the future
+    if (!decryptedProfile.yearGroup || typeof decryptedProfile.yearGroup !== 'number') {
+      console.warn('Invalid decrypted year group, using fallback');
+      decryptedProfile.yearGroup = 1;
+    }
     
     return decryptedProfile;
   } catch (error) {
@@ -152,6 +178,9 @@ export const getProfileById = async (id: string): Promise<Profile | null> => {
 
 /**
  * Update a profile
+ * @param id - The ID of the profile to update
+ * @param profileData - The new profile data
+ * @returns The updated profile or null if the profile was not found
  */
 export const updateProfile = async (id: string, profileData: Partial<Profile>): Promise<Profile | null> => {
   try {
@@ -162,10 +191,15 @@ export const updateProfile = async (id: string, profileData: Partial<Profile>): 
       return null;
     }
     
+    // First decrypt the existing profile
+    const currentProfile = await decryptProfileData(encryptedProfile);
+    
     // Create updated profile with new data
     const updatedProfile: Profile = {
-      ...encryptedProfile,
+      ...currentProfile,
       ...profileData,
+      // Ensure lastUsed is updated
+      lastUsed: new Date(),
     };
     
     // Encrypt the updated profile
@@ -175,10 +209,7 @@ export const updateProfile = async (id: string, profileData: Partial<Profile>): 
     await db.update(STORES.PROFILES, newEncryptedProfile);
     
     // Return the unencrypted profile to the caller
-    return {
-      ...updatedProfile,
-      name: profileData.name || (await decryptProfileData(encryptedProfile)).name,
-    };
+    return updatedProfile;
   } catch (error) {
     console.error('Error updating profile:', error);
     return null;

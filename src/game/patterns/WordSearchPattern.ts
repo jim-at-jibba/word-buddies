@@ -6,13 +6,12 @@
  */
 
 import { BaseGamePattern } from '../core/BaseGamePattern';
-import { 
+import type { 
   GameConfig, 
-  GamePatternType, 
   GameSession, 
-  Word,
-  WordDifficulty
+  Word
 } from '../core/types';
+import { GamePatternType, WordDifficulty } from '../core/types';
 import { loadWordListForYearGroup, getRandomWords, filterWordsByDifficulty } from '../utils/wordListLoader';
 
 // Directions for word placement

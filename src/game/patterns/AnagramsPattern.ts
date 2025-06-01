@@ -5,12 +5,12 @@
  * Players are presented with scrambled words and must unscramble them.
  */
 
-import { 
+import type { 
   GameConfig, 
-  GamePatternType, 
   GameSession,
   Word
 } from '../core/types';
+import { GamePatternType } from '../core/types';
 import { BaseGamePattern } from '../core/BaseGamePattern';
 import { ScoreSystem } from '../core/ScoreSystem';
 

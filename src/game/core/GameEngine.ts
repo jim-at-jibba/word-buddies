@@ -6,14 +6,14 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { 
+import type { 
   GameConfig, 
   GameSession, 
   GamePattern, 
-  GamePatternType,
   GameResult,
   Word
 } from './types';
+import { GamePatternType } from './types';
 import { loadWordListForYearGroup, getRandomWords } from '../utils/wordListLoader';
 
 export class GameEngine {

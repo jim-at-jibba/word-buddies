@@ -5,7 +5,9 @@
  * Calculates points based on word difficulty, time taken, and game-specific factors.
  */
 
-import { GameSession, Word, WordDifficulty } from './types';
+import type { GameSession, Word } from './types';
+import { WordDifficulty } from './types';
+
 
 export class ScoreSystem {
   // Base points for different word difficulties

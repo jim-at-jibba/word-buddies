@@ -6,13 +6,13 @@
  */
 
 import { v4 as uuidv4 } from 'uuid';
-import { 
+import type { 
   GameConfig, 
   GamePattern, 
-  GamePatternType, 
   GameSession, 
   Word 
 } from './types';
+import { GamePatternType } from './types';
 import { loadWordListForYearGroup, getRandomWords, filterWordsByDifficulty } from '../utils/wordListLoader';
 import { ScoreSystem } from './ScoreSystem';
 

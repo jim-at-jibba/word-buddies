@@ -5,7 +5,7 @@
  * and handles the loading of appropriate word lists.
  */
 
-import { v4 as uuidv4 } from 'uuid';
+// UUID is used in BaseGamePattern, not needed here
 import type { 
   GameConfig, 
   GameSession, 

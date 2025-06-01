@@ -9,10 +9,8 @@ import * as db from './db';
 import type { Profile } from '../components/profile';
 import * as encryptionService from './encryptionService';
 
-// In-memory cache for profiles to reduce localStorage reads
-let profilesCache: Record<string, any> | null = null;
-let lastCacheUpdate = 0;
-const CACHE_TTL = 60000; // 1 minute cache TTL
+// Note: Caching is currently disabled but may be implemented in the future
+// when we need to optimize performance
 
 const { STORES } = db;
 
@@ -20,10 +18,22 @@ const { STORES } = db;
 const ENCRYPTION_PASSWORD_KEY = 'wordBuddies_encryptionMasterPassword';
 
 /**
+ * Check if code is running in browser environment
+ */
+const isBrowser = (): boolean => {
+  return typeof window !== 'undefined';
+};
+
+/**
  * Get or generate the encryption master password
  * This password is used to encrypt/decrypt profile data
  */
 const getEncryptionPassword = (): string => {
+  if (!isBrowser()) {
+    // Return a temporary placeholder during server-side rendering
+    return 'temp-server-side-password';
+  }
+  
   let password = localStorage.getItem(ENCRYPTION_PASSWORD_KEY);
   
   if (!password) {

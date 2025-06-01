@@ -8,6 +8,11 @@
 import type { Word } from '../core/types';
 import { WordDifficulty } from '../core/types';
 
+// Check if code is running in browser environment
+const isBrowser = (): boolean => {
+  return typeof window !== 'undefined';
+};
+
 // Cache for loaded word lists to improve performance
 const wordListCache: Record<string, Word[]> = {};
 
@@ -46,7 +51,14 @@ export const loadWordListForYearGroup = async (yearGroup: number): Promise<Word[
   }
   
   try {
+    // Check if we're in a browser environment
+    if (!isBrowser()) {
+      console.warn('Word list loading is not available during server-side rendering');
+      return [];
+    }
+    
     // Dynamic import of the word list based on year group
+    // @vite-ignore - Ignore Vite warning about dynamic import
     const wordModule = await import(`../../data/year${yearGroup}/words`);
     const wordList = wordModule[`year${yearGroup}Words`] || [];
     

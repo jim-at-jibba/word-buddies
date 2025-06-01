@@ -7,6 +7,13 @@
  * before storing it in the browser's local storage or IndexedDB.
  */
 
+/**
+ * Check if code is running in browser environment
+ */
+const isBrowser = (): boolean => {
+  return typeof window !== 'undefined';
+};
+
 // Constants for encryption
 const ALGORITHM = 'AES-GCM';
 const KEY_LENGTH = 256; // AES-256
@@ -138,6 +145,12 @@ export async function decrypt(encryptedData: string, password: string): Promise<
  */
 export function generateSecurePassword(length: number = 16): string {
   const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+';
+  
+  // Return a fallback password during server-side rendering
+  if (!isBrowser()) {
+    return 'temp-password-' + new Date().getTime().toString().slice(-8);
+  }
+  
   const randomValues = new Uint8Array(length);
   crypto.getRandomValues(randomValues);
   
@@ -154,7 +167,8 @@ export function generateSecurePassword(length: number = 16): string {
  * @returns True if the Web Crypto API is available
  */
 export function isCryptoAvailable(): boolean {
-  return typeof crypto !== 'undefined' && 
+  return isBrowser() && 
+         typeof crypto !== 'undefined' && 
          typeof crypto.subtle !== 'undefined' && 
          typeof crypto.getRandomValues !== 'undefined';
 }

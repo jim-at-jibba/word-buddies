@@ -3,6 +3,13 @@
  * Handles application settings using localStorage
  */
 
+/**
+ * Check if code is running in browser environment
+ */
+const isBrowser = (): boolean => {
+  return typeof window !== 'undefined';
+};
+
 // Prefix for all localStorage keys to avoid conflicts
 const STORAGE_PREFIX = 'wordBuddies_';
 
@@ -20,6 +27,9 @@ export const SETTINGS = {
  */
 export const getSetting = <T>(key: string, defaultValue: T): T => {
   try {
+    if (!isBrowser()) {
+      return defaultValue;
+    }
     const value = localStorage.getItem(key);
     return value ? JSON.parse(value) : defaultValue;
   } catch (error) {
@@ -33,6 +43,9 @@ export const getSetting = <T>(key: string, defaultValue: T): T => {
  */
 export const setSetting = <T>(key: string, value: T): void => {
   try {
+    if (!isBrowser()) {
+      return;
+    }
     localStorage.setItem(key, JSON.stringify(value));
   } catch (error) {
     console.error(`Error setting setting ${key}:`, error);
@@ -44,6 +57,9 @@ export const setSetting = <T>(key: string, value: T): void => {
  */
 export const removeSetting = (key: string): void => {
   try {
+    if (!isBrowser()) {
+      return;
+    }
     localStorage.removeItem(key);
   } catch (error) {
     console.error(`Error removing setting ${key}:`, error);

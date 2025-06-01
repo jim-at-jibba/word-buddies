@@ -9,8 +9,7 @@ import { useState, useCallback } from 'react';
 import { GameEngine } from '../game/core/GameEngine';
 import type { 
   GameConfig, 
-  GameSession, 
-  GameResult
+  GameSession
 } from '../game/core/types';
 import { GamePatternType } from '../game/core/types';
 import { AnagramsPattern } from '../game/patterns/AnagramsPattern';

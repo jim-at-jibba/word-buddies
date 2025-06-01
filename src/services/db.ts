@@ -14,9 +14,21 @@ const STORES = {
   PROGRESS: 'progress',
 };
 
+/**
+ * Check if code is running in browser environment
+ */
+const isBrowser = (): boolean => {
+  return typeof window !== 'undefined';
+};
+
 // Initialize the database
 export const initDatabase = (): Promise<IDBDatabase> => {
   return new Promise((resolve, reject) => {
+    if (!isBrowser()) {
+      reject(new Error('Cannot access IndexedDB during server-side rendering'));
+      return;
+    }
+    
     if (!window.indexedDB) {
       reject(new Error('Your browser does not support IndexedDB'));
       return;
@@ -24,7 +36,7 @@ export const initDatabase = (): Promise<IDBDatabase> => {
 
     const request = window.indexedDB.open(DB_NAME, DB_VERSION);
 
-    request.onerror = (event) => {
+    request.onerror = () => {
       reject(new Error('Failed to open database'));
     };
 

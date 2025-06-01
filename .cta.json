@@ -1,0 +1,18 @@
+{
+  "projectName": "wordBuddies",
+  "mode": "file-router",
+  "typescript": true,
+  "tailwind": true,
+  "packageManager": "pnpm",
+  "git": true,
+  "version": 1,
+  "framework": "react-cra",
+  "chosenAddOns": [
+    "biome",
+    "netlify",
+    "sentry",
+    "shadcn",
+    "store",
+    "start"
+  ]
+}

@@ -1,8 +1,8 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router';
 import { useProfiles } from '../hooks/useProfiles';
 import ProfileManager from '../components/profile/ProfileManager';
-import type { Profile } from '../components/profile/ProfileCard';
 import { MAX_PROFILES } from '../contexts/ProfileContext';
+import { createFileRoute, useNavigate } from '@tanstack/react-router';
+import type { Profile } from '@/components/profile';
 
 export const Route = createFileRoute('/profile')({
   component: ProfileRoute,

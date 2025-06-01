@@ -6,8 +6,13 @@
 
 import { v4 as uuidv4 } from 'uuid';
 import * as db from './db';
-import { Profile } from '../components/profile';
+import type { Profile } from '../components/profile';
 import * as encryptionService from './encryptionService';
+
+// In-memory cache for profiles to reduce localStorage reads
+let profilesCache: Record<string, any> | null = null;
+let lastCacheUpdate = 0;
+const CACHE_TTL = 60000; // 1 minute cache TTL
 
 const { STORES } = db;
 

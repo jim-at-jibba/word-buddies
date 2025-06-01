@@ -1,5 +1,6 @@
 import React from 'react';
-import ProfileCard, { Profile } from './ProfileCard';
+import ProfileCard from './ProfileCard';
+import type { Profile } from '@/components/profile';
 
 interface ProfileSelectorProps {
   profiles: Profile[];

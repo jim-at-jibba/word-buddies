@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Profile } from './ProfileCard';
+import type { Profile } from '.';
 
 interface ProfileFormProps {
   initialProfile?: Partial<Profile>;

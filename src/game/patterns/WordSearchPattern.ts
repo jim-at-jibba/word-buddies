@@ -50,6 +50,9 @@ export interface WordSearchState {
   comboCount: number;
   lastActionTime?: number;
   selectedCells: Position[];
+  correctWords?: string[];
+  incorrectWords?: string[];
+  timeSpent?: number;
 }
 
 export class WordSearchPattern extends BaseGamePattern {
@@ -88,16 +91,30 @@ export class WordSearchPattern extends BaseGamePattern {
 
   /**
    * Process user input for the word search game
-   * Input is an array of selected cell positions
+   * Input is an array of selected cell positions or a time update object
    */
-  protected processGameInput(gameState: WordSearchState, input: Position[]): WordSearchState {
+  protected processGameInput(gameState: WordSearchState, input: Position[] | { type: string, timeElapsed: number }): WordSearchState {
     const now = Date.now();
+    
+    // Handle time update
+    if (input && typeof input === 'object' && 'type' in input && input.type === 'UPDATE_TIME') {
+      // Update the game state with the current time elapsed
+      return {
+        ...gameState,
+        endTime: now,
+        timeSpent: input.timeElapsed
+      };
+    }
+    
+    // Handle cell selection (input is Position[])
+    const cellPositions = input as Position[];
     
     // Update selected cells
     const updatedState = {
       ...gameState,
-      selectedCells: input,
-      lastActionTime: now
+      selectedCells: cellPositions,
+      lastActionTime: now,
+      endTime: now // Always update end time for accurate time tracking
     };
     
     // Check if the selection forms a valid word
@@ -111,8 +128,14 @@ export class WordSearchPattern extends BaseGamePattern {
         updatedState.foundWords = [...updatedState.foundWords, selectedWord];
         updatedState.foundWordIndices = [...updatedState.foundWordIndices, wordIndex];
         
+        // Add to correctWords array for game results
+        if (!updatedState.correctWords) {
+          updatedState.correctWords = [];
+        }
+        updatedState.correctWords = [...updatedState.correctWords, selectedWord];
+        
         // Mark cells as revealed
-        input.forEach(pos => {
+        cellPositions.forEach(pos => {
           updatedState.grid[pos.row][pos.col].isRevealed = true;
         });
         

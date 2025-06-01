@@ -25,6 +25,7 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
     gameState, 
     startGame, 
     processInput, 
+    endGame,
     error,
     loading
   } = useGameEngine();
@@ -50,17 +51,28 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
     
     const timer = setInterval(() => {
       setTimeElapsed(prev => prev + 1);
+      
+      // Update the game state with the current time elapsed
+      // We do this inside the interval to avoid dependency on timeElapsed
+      if (gameState && !gameState.completed) {
+        processInput({ type: 'UPDATE_TIME', timeElapsed: timeElapsed + 1 });
+      }
     }, 1000);
     
     return () => clearInterval(timer);
-  }, [gameState, navigate]);
+  }, [gameState, processInput]);
+  
   
   // Navigate to results when game is complete
   useEffect(() => {
     if (gameState?.completed) {
-      navigate({ to: '/game-result' });
+      // End the game properly to save results
+      const result = endGame();
+      if (result) {
+        navigate({ to: '/game-result' });
+      }
     }
-  }, [gameState, navigate]);
+  }, [gameState, navigate, endGame]);
   
   // Format time as MM:SS
   const formatTime = (seconds: number): string => {

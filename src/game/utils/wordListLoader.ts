@@ -58,8 +58,8 @@ export const loadWordListForYearGroup = async (yearGroup: number): Promise<Word[
     }
     
     // Dynamic import of the word list based on year group
-    // @vite-ignore - Ignore Vite warning about dynamic import
-    const wordModule = await import(`../../data/year${yearGroup}/words`);
+    // Use proper file extension for dynamic imports as required by Vite
+    const wordModule = await import(`../../data/year${yearGroup}/words.js`);
     const wordList = wordModule[`year${yearGroup}Words`] || [];
     
     // Convert string array to Word objects and cache

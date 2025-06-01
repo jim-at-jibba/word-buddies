@@ -223,104 +223,72 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
                 </span>
               </div>
             ))}
+          </div>
+          <div className="mt-4 text-sm text-gray-600">
+            <p>Found: {gameState.foundWords?.length || 0} / {gameState.words?.length || 0}</p>
+          </div>
         </div>
-        <div className="bg-primary-100 px-4 py-2 rounded-lg">
-          <span className="font-medium">Score:</span> {gameState.score || 0}
-        </div>
-      </div>
-    </div>
 
-    {/* Game content container */}
-    <div className="flex flex-col md:flex-row gap-6">
-      {/* Word list */}
-      <div className="md:w-1/4 bg-white p-4 rounded-lg shadow-md">
-        <h3 className="text-lg font-bold mb-3 text-primary-700">Words to Find:</h3>
-        <div className="flex flex-col gap-2">
-          {gameState.words?.map((word: { value: string }, index: number) => (
-            <div 
-              key={index} 
-              className={`px-3 py-2 rounded-md border ${isWordFound(word.value) 
-                ? 'bg-green-50 border-green-200 text-green-800' 
-                : 'bg-white border-gray-200'}`}
-            >
-              <span className={`font-medium ${isWordFound(word.value) ? 'line-through' : ''}`}>
-                {word.value}
-              </span>
-            </div>
-          ))}
+        {/* Game grid */}
+        <div className="md:w-3/4 overflow-auto">
+          <div 
+            className="grid gap-1 mx-auto"
+            style={{ 
+              gridTemplateColumns: `repeat(${gameState.gridSize || 10}, minmax(30px, 40px))`,
+              touchAction: 'none' // Prevent scrolling on touch devices
+            }}
+            onMouseLeave={() => {
+              if (isSelecting) {
+                setIsSelecting(false);
+                setSelectedCells([]);
+              }
+            }}
+          >
+            {gameState.grid?.map((row: any[], rowIndex: number) => (
+              row.map((cell: any, colIndex: number) => (
+                <div
+                  key={`${rowIndex}-${colIndex}`}
+                  className={`
+                    w-full aspect-square flex items-center justify-center
+                    text-lg font-bold border-2 rounded-md cursor-pointer
+                    select-none transition-colors
+                    ${isSelected(rowIndex, colIndex) 
+                      ? 'bg-yellow-200 border-yellow-500 text-yellow-800' 
+                      : isRevealed(rowIndex, colIndex) 
+                        ? 'bg-green-100 border-green-500 text-green-800' 
+                        : 'bg-white border-gray-200 hover:bg-gray-50'}
+                  `}
+                  onMouseDown={() => handleMouseDown(rowIndex, colIndex)}
+                  onMouseEnter={() => handleMouseEnter(rowIndex, colIndex)}
+                  onMouseUp={handleMouseUp}
+                  // Touch events for mobile
+                  onTouchStart={() => handleMouseDown(rowIndex, colIndex)}
+                  onTouchMove={(e) => {
+                    // Get touch position and find the element under it
+                    const touch = e.touches[0];
+                    const element = document.elementFromPoint(touch.clientX, touch.clientY);
+                    
+                    // Extract row and col from element id or data attributes
+                    // This is a simplified approach - you might need a more robust solution
+                    const cellId = element?.id;
+                    if (cellId && cellId.startsWith('cell-')) {
+                      const [row, col] = cellId.replace('cell-', '').split('-').map(Number);
+                      handleMouseEnter(row, col);
+                    }
+                  }}
+                  onTouchEnd={handleMouseUp}
+                  id={`cell-${rowIndex}-${colIndex}`}
+                >
+                  {cell.letter}
+                </div>
+              ))
+            ))}
+          </div>
         </div>
-        <div className="mt-4 text-sm text-gray-600">
-          <p>Found: {gameState.foundWords?.length || 0} / {gameState.words?.length || 0}</p>
-        </div>
-      </div>
-
-      {/* Game grid */}
-      <div className="md:w-3/4 overflow-auto">
-        <div 
-          className="grid gap-1 mx-auto"
-          style={{ 
-            gridTemplateColumns: `repeat(${gameState.gridSize || 10}, minmax(30px, 40px))`,
-            touchAction: 'none' // Prevent scrolling on touch devices
-          }}
-          onMouseLeave={() => {
-            if (isSelecting) {
-              setIsSelecting(false);
-              setSelectedCells([]);
-            }
-          }}
-        >
-          {gameState.grid?.map((row: any[], rowIndex: number) => (
-            row.map((cell: any, colIndex: number) => (
-              <div
-                key={`${rowIndex}-${colIndex}`}
-                className={`
-                  w-full aspect-square flex items-center justify-center
-                  text-lg font-bold border-2 rounded-md cursor-pointer
-                  select-none transition-colors
-                  ${isSelected(rowIndex, colIndex) 
-                    ? 'bg-yellow-200 border-yellow-500 text-yellow-800' 
-                    : isRevealed(rowIndex, colIndex) 
-                      ? 'bg-green-100 border-green-500 text-green-800' 
-                      : 'bg-white border-gray-200 hover:bg-gray-50'}
-                `}
-                onMouseDown={() => handleMouseDown(rowIndex, colIndex)}
-                onMouseEnter={() => handleMouseEnter(rowIndex, colIndex)}
-                onMouseUp={handleMouseUp}
-                // Touch events for mobile
-                onTouchStart={() => handleMouseDown(rowIndex, colIndex)}
-                onTouchMove={(e) => {
-                  // Get touch position and find the element under it
-                  const touch = e.touches[0];
-                  const element = document.elementFromPoint(touch.clientX, touch.clientY);
-                  
-                  // Extract row and col from element id or data attributes
-                  // This is a simplified approach - you might need a more robust solution
-                  const cellId = element?.id;
-                  if (cellId && cellId.startsWith('cell-')) {
-                    const [row, col] = cellId.replace('cell-', '').split('-').map(Number);
-                    handleMouseEnter(row, col);
-                  }
-                }}
-                onTouchEnd={handleMouseUp}
-                id={`cell-${rowIndex}-${colIndex}`}
-              >
-                {cell.letter}
-              </div>
-            ))
-          ))}
-        </div>
-      </div>
-      {gameState.words?.map((word: { value: string }, index: number) => (
-        <div className="px-3 py-1 bg-green-100 text-green-800 rounded-full text-sm"
-          key={index}
-        >
-          <span>{word.value}</span>
-        </div>
-      ))}
       </div>
       
       {/* Controls */}
-      <div className="flex justify-between">
+      <div className="flex justify-between mt-6">
         <button
           className="px-4 py-2 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
           onClick={() => navigate({ to: '/games' })}
@@ -329,5 +297,5 @@ export const WordSearch: React.FC<WordSearchProps> = ({ yearGroup, difficulty })
         </button>
       </div>
     </div>
-  );
+  )
 };

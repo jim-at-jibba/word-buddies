@@ -162,6 +162,7 @@ export class WordSearchPattern extends BaseGamePattern {
     return {
       grid: state.grid,
       gridSize: state.gridSize,
+      words: state.words,
       foundWords: state.foundWords,
       totalWords: state.words.length,
       remainingWords: state.words.length - state.foundWords.length,

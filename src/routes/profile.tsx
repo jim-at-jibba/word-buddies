@@ -25,6 +25,7 @@ function ProfileRoute() {
     selectProfile,
     hasReachedMaxProfiles: maxProfilesReached
   } = useProfiles(MAX_PROFILES);
+  console.log('ProfileRoute', { profiles, selectedProfile, maxProfilesReached });
 
   // Handle profile selection
   const handleSelectProfile = async (profile: Profile) => {
@@ -103,7 +104,7 @@ function ProfileRoute() {
               <button 
                 onClick={toggleCreateForm}
                 disabled={maxProfilesReached}
-                className={`px-4 py-2 rounded-md ${maxProfilesReached ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'} text-white focus:outline-none focus:ring-2 focus:ring-primary-500`}
+                className={`px-4 py-2 rounded-md ${maxProfilesReached ? 'bg-gray-400 cursor-not-allowed' : 'bg-primary-600 hover:bg-primary-700'} text-black focus:outline-none focus:ring-2 focus:ring-primary-500`}
               >
                 Create New Profile
               </button>

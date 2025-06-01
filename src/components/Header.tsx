@@ -3,6 +3,7 @@ import { useProfileContext } from '../contexts/ProfileContext'
 
 export default function Header() {
   const { selectedProfile, loading } = useProfileContext();
+  console.log('Header', { selectedProfile, loading });
 
   return (
     <header className="p-2 flex gap-2 bg-white text-black justify-between">

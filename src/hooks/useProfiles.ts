@@ -44,6 +44,7 @@ export function useProfiles(maxProfiles: number = 10): UseProfilesReturn {
           const activeProfile = await profileService.getProfileById(activeProfileId);
           if (activeProfile) {
             setSelectedProfile(activeProfile);
+            setLoading(false);
             await profileService.updateProfileLastUsed(activeProfileId);
             return;
           }

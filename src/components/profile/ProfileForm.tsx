@@ -96,7 +96,7 @@ const ProfileForm: React.FC<ProfileFormProps> = ({
         )}
         <button
           type="submit"
-          className="px-4 py-2 bg-primary-600 text-white rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+          className="px-4 py-2 bg-primary-600 text-black rounded-md hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
         >
           {initialProfile?.id ? 'Update Profile' : 'Create Profile'}
         </button>

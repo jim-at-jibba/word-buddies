@@ -8,6 +8,7 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 
 import Header from '../components/Header'
 import { ProfileProvider } from '../contexts/ProfileContext'
+import { GameProvider } from '../contexts/GameContext'
 
 import appCss from '../styles.css?url'
 
@@ -36,10 +37,12 @@ export const Route = createRootRoute({
   component: () => (
     <RootDocument>
       <ProfileProvider>
-        <Header />
+        <GameProvider>
+          <Header />
 
-        <Outlet />
-        <TanStackRouterDevtools />
+          <Outlet />
+          <TanStackRouterDevtools />
+        </GameProvider>
       </ProfileProvider>
     </RootDocument>
   ),

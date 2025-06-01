@@ -14,17 +14,34 @@ import { GamePatternType } from '../core/types';
 import { BaseGamePattern } from '../core/BaseGamePattern';
 import { ScoreSystem } from '../core/ScoreSystem';
 
+/**
+ * AnagramGameState interface
+ * 
+ * Represents the state of an anagram game session.
+ * Contains all the data needed to track game progress, scoring, and user performance.
+ */
 interface AnagramGameState {
+  /** List of Word objects used in the game */
   words: Word[];
+  /** List of scrambled versions of each word */
   scrambledWords: string[];
+  /** List of words that the player has correctly unscrambled */
   correctWords: string[];
+  /** List of words that the player failed to unscramble correctly */
   incorrectWords: string[];
+  /** Total number of words in the game session */
   totalWords: number;
+  /** Current word index the player is attempting */
   currentIndex: number;
+  /** Difficulty level of the game (easy, medium, hard) */
   difficulty: string;
+  /** Time limit for the game in seconds (0 for no limit) */
   timeLimit: number;
+  /** Timestamp when the current word was presented */
   startTime: number;
+  /** Counter for consecutive correct answers */
   comboCount: number;
+  /** Current accumulated score */
   score: number;
 }
 

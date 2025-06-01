@@ -9,7 +9,8 @@ import { createFileRoute, Link } from '@tanstack/react-router';
 import { useProfileContext } from '../contexts/ProfileContext';
 import { useGameContext } from '../contexts/GameContext';
 import { GamePatternType, WordDifficulty } from '../game/core/types';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useNavigate } from '@tanstack/react-router';
 
 export const Route = createFileRoute('/games')({
   component: GamesRoute,
@@ -17,9 +18,11 @@ export const Route = createFileRoute('/games')({
 
 function GamesRoute() {
   const { selectedProfile } = useProfileContext();
-  const { getAvailablePatterns, startGame, loading } = useGameContext();
+  const { getAvailablePatterns, startGame, loading, activeSession } = useGameContext();
   const [selectedPattern, setSelectedPattern] = useState<GamePatternType | null>(null);
   const [selectedDifficulty, setSelectedDifficulty] = useState<WordDifficulty>(WordDifficulty.EASY);
+  const [pendingNavigation, setPendingNavigation] = useState(false);
+  const navigate = useNavigate();
   
   const availablePatterns = getAvailablePatterns();
 
@@ -46,12 +49,18 @@ function GamesRoute() {
     };
     
     const session = await startGame(config);
-    
     if (session) {
-      // Navigate to the specific game route
-      window.location.href = `/game/${selectedPattern}`;
+      setPendingNavigation(true);
     }
   };
+
+  // Effect: navigate only after activeSession is set and pendingNavigation is true
+  useEffect(() => {
+    if (pendingNavigation && activeSession && selectedPattern) {
+      navigate({ to: `/game/${selectedPattern}` });
+      setPendingNavigation(false);
+    }
+  }, [pendingNavigation, activeSession, selectedPattern, navigate]);
 
   if (!selectedProfile) {
     // Redirect to profile selection if no profile is selected
@@ -124,7 +133,7 @@ function GamesRoute() {
                     key={difficulty}
                     className={`px-4 py-2 rounded-md ${
                       selectedDifficulty === difficulty
-                        ? 'bg-primary-600 text-white'
+                        ? 'bg-primary-600 text-black'
                         : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                     }`}
                     onClick={() => handleDifficultySelect(difficulty)}
@@ -136,7 +145,7 @@ function GamesRoute() {
               
               <div className="mt-8">
                 <button
-                  className="px-6 py-3 bg-primary-600 text-white rounded-md hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
+                  className="px-6 py-3 bg-primary-600 text-black rounded-md hover:bg-primary-700 disabled:bg-gray-300 disabled:cursor-not-allowed"
                   onClick={handleStartGame}
                   disabled={loading}
                 >

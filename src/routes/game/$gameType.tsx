@@ -134,7 +134,19 @@ function GameRoute() {
               </div>
             </div>
             
-            {gameState && (
+            {gameState && gameState.totalWords === 0 ? (
+              <div className="mb-8 text-center">
+                <div className="text-2xl font-bold mb-4 text-red-600">No words available</div>
+                <p className="text-gray-700 mb-6">No words are available for this year group. Please select a different year group or contact your teacher/admin.</p>
+                <button
+                  className="px-6 py-2 bg-primary-600 text-white font-bold rounded-lg hover:bg-primary-700 focus:outline-none focus:ring-2 focus:ring-primary-500"
+                  style={{ color: '#fff', backgroundColor: '#2563eb' }}
+                  onClick={() => navigate({ to: '/games' })}
+                >
+                  Back to Games
+                </button>
+              </div>
+            ) : gameState && (
               <div className="mb-8">
                 <div className="text-center mb-4">
                   <p className="text-sm text-gray-600 mb-1">Word {gameState.currentIndex + 1} of {gameState.totalWords}</p>
@@ -142,7 +154,6 @@ function GameRoute() {
                     {gameState.currentScrambledWord}
                   </div>
                 </div>
-                
                 <div className="mt-6">
                   <form onSubmit={handleSubmit}>
                     <div className="flex gap-2">

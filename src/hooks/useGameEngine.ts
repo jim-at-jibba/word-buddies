@@ -14,6 +14,7 @@ import type {
 import { GamePatternType } from '../game/core/types';
 import { AnagramsPattern } from '../game/patterns/AnagramsPattern';
 import { WordSearchPattern } from '../game/patterns/WordSearchPattern';
+import { SpellingBeePattern } from '../game/patterns/SpellingBeePattern';
 
 // Create and configure the game engine
 const gameEngine = new GameEngine();
@@ -21,6 +22,7 @@ const gameEngine = new GameEngine();
 // Register available game patterns
 gameEngine.registerPattern(new AnagramsPattern());
 gameEngine.registerPattern(new WordSearchPattern());
+gameEngine.registerPattern(new SpellingBeePattern());
 // Additional patterns will be registered here as they are implemented
 
 /**
@@ -129,6 +131,7 @@ export const useGameEngine = () => {
     return [
       { type: GamePatternType.ANAGRAMS, name: 'Anagrams' },
       { type: GamePatternType.WORD_SEARCH, name: 'Word Search' },
+      { type: GamePatternType.SPELLING_BEE, name: 'Spelling Bee' },
       // Additional patterns will be added here as they are implemented
     ];
   }, []);

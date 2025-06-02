@@ -67,10 +67,13 @@ function DashboardRoute() {
                 <h4 className="font-bold mb-2">Word Search</h4>
                 <p className="text-gray-600 text-sm">Find hidden words in a grid of letters</p>
               </Link>
-              <div className="border border-gray-200 rounded-lg p-4 opacity-60 cursor-not-allowed">
+              <Link
+                to="/games"
+                className="border border-gray-200 rounded-lg p-4 hover:border-primary-500 hover:bg-primary-50 transition-colors"
+              >
                 <h4 className="font-bold mb-2">Spelling Bee</h4>
-                <p className="text-gray-600 text-sm">Spell words correctly (Coming soon)</p>
-              </div>
+                <p className="text-gray-600 text-sm">Create words using a set of letters with one required center letter</p>
+              </Link>
             </div>
           </div>
           

@@ -31,6 +31,7 @@ export const SpellingBee: React.FC<SpellingBeeProps> = ({ yearGroup, difficulty 
   const [timeElapsed, setTimeElapsed] = useState(0);
   const [message, setMessage] = useState<{ text: string, type: 'success' | 'error' | 'info' } | null>(null);
   const [showFoundWords, setShowFoundWords] = useState(false);
+  const [shuffledOuterLetters, setShuffledOuterLetters] = useState<string[]>([]);
   
   // Start game on component mount
   useEffect(() => {
@@ -41,6 +42,13 @@ export const SpellingBee: React.FC<SpellingBeeProps> = ({ yearGroup, difficulty 
       wordCount: 30 // Spelling Bee needs more words for a good game
     });
   }, [startGame, difficulty, yearGroup]);
+
+  // Initialize shuffled letters when gameState changes
+  useEffect(() => {
+    if (gameState?.outerLetters) {
+      setShuffledOuterLetters([...gameState.outerLetters]);
+    }
+  }, [gameState?.outerLetters]);
   
   // Timer effect
   useEffect(() => {
@@ -121,12 +129,11 @@ export const SpellingBee: React.FC<SpellingBeeProps> = ({ yearGroup, difficulty 
       [outerLetters[i], outerLetters[j]] = [outerLetters[j], outerLetters[i]];
     }
     
-    // Instead of sending to the game engine, we'll just update our UI state
-    // This avoids the error with processInput trying to call toLowerCase() on an object
-    setMessage({ text: 'Letters shuffled!', type: 'info' });
+    // Update the shuffled letters state to trigger a re-render
+    setShuffledOuterLetters(outerLetters);
     
-    // Force a re-render by updating a state variable
-    setTimeElapsed(prev => prev);
+    // Show a message to the user
+    setMessage({ text: 'Letters shuffled!', type: 'info' });
   };
   
   // Handle submit button click
@@ -428,7 +435,7 @@ export const SpellingBee: React.FC<SpellingBeeProps> = ({ yearGroup, difficulty 
               </button>
               
               {/* Outer letters in hexagon pattern */}
-              {gameState?.outerLetters?.map((letter: string, index: number) => {
+              {shuffledOuterLetters.map((letter: string, index: number) => {
                 // Calculate position in a hexagon pattern
                 const angle = (index * (Math.PI / 3)) - (Math.PI / 6); // 60 degrees per letter, offset by 30 degrees
                 const radius = 80; // Distance from center

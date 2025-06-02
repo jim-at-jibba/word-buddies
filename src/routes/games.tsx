@@ -115,7 +115,7 @@ function GamesRoute() {
                   {pattern.type === GamePatternType.WORD_SEARCH && 
                     'Find hidden words in a grid of letters'}
                   {pattern.type === GamePatternType.SPELLING_BEE && 
-                    'Spell words correctly after hearing them'}
+                    'Create words using a set of letters with one required center letter'}
                   {pattern.type === GamePatternType.WORD_CHAINS && 
                     'Connect words by changing one letter at a time'}
                   {pattern.type === GamePatternType.WORD_CATEGORIES && 

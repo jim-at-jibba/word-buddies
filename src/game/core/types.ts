@@ -18,11 +18,14 @@ export enum GamePatternType {
   WORD_CATEGORIES = 'wordCategories'
 }
 
+// Word categories
+export type WordCategory = 'vowel-starting' | 'vowel-ending' | 'long' | 'short' | 'general';
+
 // Word data structure
 export interface Word {
   value: string;
   difficulty: WordDifficulty;
-  category?: string;
+  category?: WordCategory;
 }
 
 // Game session state

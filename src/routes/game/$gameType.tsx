@@ -10,6 +10,7 @@ import { useEffect, useState } from 'react';
 import { useProfileContext } from '../../contexts/ProfileContext';
 import { useGameContext } from '../../contexts/GameContext';
 import { WordSearch } from '../../components/games/WordSearch';
+import { SpellingBee } from '../../components/games/SpellingBee';
 
 export const Route = createFileRoute('/game/$gameType')({
   component: GameRoute,
@@ -196,6 +197,13 @@ function GameRoute() {
       case 'wordSearch':
         return (
           <WordSearch 
+            yearGroup={selectedProfile?.yearGroup || 3} 
+            difficulty={gameState?.difficulty || 'easy'} 
+          />
+        );
+      case 'spellingBee':
+        return (
+          <SpellingBee 
             yearGroup={selectedProfile?.yearGroup || 3} 
             difficulty={gameState?.difficulty || 'easy'} 
           />

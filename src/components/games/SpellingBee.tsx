@@ -121,19 +121,25 @@ export const SpellingBee: React.FC<SpellingBeeProps> = ({ yearGroup, difficulty 
   // Handle shuffle button click
   const handleShuffle = () => {
     if (!gameState) return;
-    // We don't actually shuffle the letters in the game state,
-    // just visually shuffle the outer letters for the player
-    const outerLetters = [...(gameState.outerLetters || [])];
-    for (let i = outerLetters.length - 1; i > 0; i--) {
+
+    // Notify the game engine of the shuffle action
+    processInput({ type: 'SHUFFLE_LETTERS' });
+
+    // Perform an immediate visual shuffle for responsiveness.
+    // The game state might also update outerLetters if the engine shuffles them,
+    // which would then be reflected via the useEffect on gameState.outerLetters.
+    const lettersToShuffle = [...(shuffledOuterLetters.length > 0 ? shuffledOuterLetters : (gameState.outerLetters || []))];
+    for (let i = lettersToShuffle.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
-      [outerLetters[i], outerLetters[j]] = [outerLetters[j], outerLetters[i]];
+      [lettersToShuffle[i], lettersToShuffle[j]] = [lettersToShuffle[j], lettersToShuffle[i]];
     }
     
     // Update the shuffled letters state to trigger a re-render
-    setShuffledOuterLetters(outerLetters);
+    setShuffledOuterLetters(lettersToShuffle);
     
     // Show a message to the user
     setMessage({ text: 'Letters shuffled!', type: 'info' });
+    setTimeout(() => setMessage(null), 2000); // Clear message after a delay
   };
   
   // Handle submit button click

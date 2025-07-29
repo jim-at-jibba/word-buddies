@@ -9,6 +9,7 @@ import CatMascot from '@/components/CatMascot';
 import { PracticeWord, SpellingAttempt } from '@/types';
 import { checkSpelling } from '@/lib/client-utils';
 import { speakEncouragement } from '@/lib/speech';
+import { getRandomWord, updateWordStats, createSession, updateSessionDuration } from '@/lib/client-spelling-logic';
 
 export default function PracticePage() {
   const router = useRouter();
@@ -43,17 +44,11 @@ export default function PracticePage() {
     console.trace('Call stack:');
     setIsLoading(true);
     try {
-      const response = await fetch('/api/words');
-      const data = await response.json();
-      
-      if (data.success) {
-        console.log('✅ Fetched new word:', data.data.word, 'at:', new Date().toISOString());
-        console.log('📋 Previous currentWord was:', currentWord?.word);
-        setCurrentWord(data.data);
-        console.log('📋 Setting currentWord to:', data.data.word);
-      } else {
-        console.error('Error fetching word:', data.error);
-      }
+      const word = await getRandomWord();
+      console.log('✅ Fetched new word:', word.word, 'at:', new Date().toISOString());
+      console.log('📋 Previous currentWord was:', currentWord?.word);
+      setCurrentWord(word);
+      console.log('📋 Setting currentWord to:', word.word);
     } catch (error) {
       console.error('Error fetching word:', error);
     } finally {
@@ -101,21 +96,11 @@ export default function PracticePage() {
       return prev + 1;
     });
 
-    // Submit to API
+    // Update word statistics
     try {
-      await fetch('/api/words', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          word: wordToCheck,
-          userSpelling,
-          isCorrect,
-        }),
-      });
+      await updateWordStats(wordToCheck, isCorrect);
     } catch (error) {
-      console.error('Error submitting word attempt:', error);
+      console.error('Error updating word stats:', error);
     }
 
     // Hide feedback and get next word after delay
@@ -138,24 +123,12 @@ export default function PracticePage() {
     const sessionDuration = Math.floor((new Date().getTime() - sessionStartTime.getTime()) / 1000);
     
     try {
-      const response = await fetch('/api/sessions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          attempts: finalAttempts,
-          duration: sessionDuration,
-        }),
-      });
+      const sessionResult = await createSession(finalAttempts);
       
-      const data = await response.json();
+      // Update session duration
+      await updateSessionDuration(sessionResult.sessionId, sessionDuration);
       
-      if (data.success) {
-        router.push(`/results?sessionId=${data.data.sessionId}`);
-      } else {
-        console.error('Error creating session:', data.error);
-      }
+      router.push(`/results?sessionId=${sessionResult.sessionId}`);
     } catch (error) {
       console.error('Error ending session:', error);
     }

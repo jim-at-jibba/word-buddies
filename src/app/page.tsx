@@ -6,6 +6,7 @@ import Link from 'next/link';
 import CatMascot from '@/components/CatMascot';
 import ProgressTracker from '@/components/ProgressTracker';
 import { ProgressStats } from '@/types';
+import { getProgressStats } from '@/lib/client-spelling-logic';
 
 export default function Home() {
   const [progressStats, setProgressStats] = useState<ProgressStats | null>(null);
@@ -17,12 +18,8 @@ export default function Home() {
 
   const fetchProgressStats = async () => {
     try {
-      const response = await fetch('/api/progress');
-      const data = await response.json();
-      
-      if (data.success) {
-        setProgressStats(data.data.stats);
-      }
+      const stats = await getProgressStats();
+      setProgressStats(stats);
     } catch (error) {
       console.error('Error fetching progress:', error);
       // Set default stats on error

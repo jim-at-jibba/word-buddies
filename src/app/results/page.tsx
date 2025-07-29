@@ -8,6 +8,7 @@ import CatMascot from '@/components/CatMascot';
 import ResultsCard from '@/components/ResultsCard';
 import { SessionResult } from '@/types';
 import { speakEncouragement } from '@/lib/speech';
+import { getSessionById } from '@/lib/client-spelling-logic';
 
 function ResultsPageContent() {
   const router = useRouter();
@@ -35,13 +36,17 @@ function ResultsPageContent() {
 
   const fetchSessionResults = async () => {
     try {
-      const response = await fetch(`/api/sessions?sessionId=${sessionId}`);
-      const data = await response.json();
+      if (!sessionId) {
+        router.push('/');
+        return;
+      }
       
-      if (data.success) {
-        setSessionResult(data.data);
+      const sessionResult = await getSessionById(sessionId);
+      
+      if (sessionResult) {
+        setSessionResult(sessionResult);
       } else {
-        console.error('Error fetching session results:', data.error);
+        console.error('Session not found');
         router.push('/');
       }
     } catch (error) {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import WordPlayer from '@/components/WordPlayer';
@@ -13,11 +13,10 @@ import { speakEncouragement } from '@/lib/speech';
 export default function PracticePage() {
   const router = useRouter();
   const [currentWord, setCurrentWord] = useState<PracticeWord | null>(null);
-  const [currentWordSession, setCurrentWordSession] = useState<{
-    word: string;
-    sessionId: string;
-    fetchedAt: Date;
-  } | null>(null);
+  
+  // Debug: Log when component renders and what currentWord is
+  console.log('🔄 PracticePage render - currentWord:', currentWord?.word);
+  const [checkedWord, setCheckedWord] = useState<string>('');
   const [attempts, setAttempts] = useState<SpellingAttempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -28,10 +27,15 @@ export default function PracticePage() {
   } | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date>(new Date());
   const [wordsCompleted, setWordsCompleted] = useState(0);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
-    fetchNextWord();
-    setSessionStartTime(new Date());
+    if (!hasInitializedRef.current) {
+      console.log('🚀 Initial word fetch - preventing double execution');
+      hasInitializedRef.current = true;
+      fetchNextWord();
+      setSessionStartTime(new Date());
+    }
   }, []);
 
   const fetchNextWord = async () => {
@@ -43,14 +47,10 @@ export default function PracticePage() {
       const data = await response.json();
       
       if (data.success) {
-        const sessionId = `word_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        console.log('✅ Fetched new word:', data.data.word, 'sessionId:', sessionId, 'at:', new Date().toISOString());
+        console.log('✅ Fetched new word:', data.data.word, 'at:', new Date().toISOString());
+        console.log('📋 Previous currentWord was:', currentWord?.word);
         setCurrentWord(data.data);
-        setCurrentWordSession({
-          word: data.data.word,
-          sessionId,
-          fetchedAt: new Date()
-        });
+        console.log('📋 Setting currentWord to:', data.data.word);
       } else {
         console.error('Error fetching word:', data.error);
       }
@@ -65,11 +65,12 @@ export default function PracticePage() {
     console.log('📝 handleSpellingSubmit called with:', userSpelling, 'at:', new Date().toISOString());
     if (!currentWord || isSubmitting) return;
 
+    // Capture the word immediately to prevent any race conditions
+    const wordToCheck = currentWord.word;
+    setCheckedWord(wordToCheck);
+    console.log('User typed:', userSpelling, 'Checking against:', wordToCheck);
+
     setIsSubmitting(true);
-    
-    // Capture the word that was actually played to prevent race conditions
-    const wordToCheck = currentWordSession?.word || currentWord.word;
-    console.log('User typed:', userSpelling, 'Checking against:', wordToCheck, 'Session:', currentWordSession?.sessionId);
     const isCorrect = checkSpelling(userSpelling, wordToCheck);
     
     // Show feedback
@@ -95,7 +96,10 @@ export default function PracticePage() {
     };
     
     setAttempts(prev => [...prev, newAttempt]);
-    setWordsCompleted(prev => prev + 1);
+    setWordsCompleted(prev => {
+      console.log('📊 Incrementing wordsCompleted from', prev, 'to', prev + 1);
+      return prev + 1;
+    });
 
     // Submit to API
     try {
@@ -119,7 +123,9 @@ export default function PracticePage() {
       setFeedback(null);
       setIsSubmitting(false);
       
+      console.log('🔍 Checking session end: wordsCompleted =', wordsCompleted, 'condition:', wordsCompleted + 1, '>=', 5, '=', wordsCompleted + 1 >= 5);
       if (wordsCompleted + 1 >= 5) {
+        console.log('🏁 Ending session after', wordsCompleted + 1, 'words');
         // End session after 5 words
         await endSession([...attempts, newAttempt]);
       } else {
@@ -247,7 +253,7 @@ export default function PracticePage() {
                     <p className="font-kid-friendly text-cat-gray">
                       The correct spelling is: 
                       <span className="font-bold text-cat-dark ml-2">
-                        {currentWordSession?.word || currentWord.word}
+                        {checkedWord}
                       </span>
                     </p>
                   </motion.div>
@@ -271,7 +277,7 @@ export default function PracticePage() {
                 </div>
 
                 <WordPlayer 
-                  word={currentWordSession?.word || currentWord.word}
+                  word={currentWord.word}
                   autoPlay={true}
                   className="mb-8"
                 />

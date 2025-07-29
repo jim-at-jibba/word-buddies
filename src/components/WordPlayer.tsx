@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { speakWord, isSpeechSupported } from '@/lib/speech';
+import { speakWord, isSpeechSupported, initializeSpeech } from '@/lib/speech';
 import CatMascot from './CatMascot';
 
 interface WordPlayerProps {
@@ -21,6 +21,7 @@ export default function WordPlayer({
   const [isPlaying, setIsPlaying] = useState(false);
   const [speechSupported, setSpeechSupported] = useState(false);
   const [hasPlayedOnce, setHasPlayedOnce] = useState(false);
+  const [speechInitialized, setSpeechInitialized] = useState(false);
 
   useEffect(() => {
     setSpeechSupported(isSpeechSupported());
@@ -40,7 +41,15 @@ export default function WordPlayer({
 
     console.log('🗣️ About to speak word:', word);
     setIsPlaying(true);
+    
     try {
+      // Initialize speech on first user interaction (required for mobile)
+      if (!speechInitialized) {
+        console.log('🔧 Initializing speech for mobile...');
+        await initializeSpeech();
+        setSpeechInitialized(true);
+      }
+      
       await speakWord(word);
       console.log('✅ Finished speaking word:', word);
       onPlayComplete?.();

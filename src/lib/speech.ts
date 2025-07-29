@@ -1,45 +1,199 @@
 // Speech synthesis utilities for the spelling app
 
+// Track if speech has been initialized with user interaction
+let speechInitialized = false;
+let voicesLoaded = false;
+let availableVoices: SpeechSynthesisVoice[] = [];
+
 export function isSpeechSupported(): boolean {
   return 'speechSynthesis' in window;
 }
 
-export function speakWord(word: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (!('speechSynthesis' in window)) {
+// Initialize speech synthesis with user interaction (required for mobile)
+export function initializeSpeech(): Promise<void> {
+  return new Promise((resolve) => {
+    if (!isSpeechSupported()) {
+      resolve();
+      return;
+    }
+
+    // Create a silent utterance to initialize speech on mobile
+    const utterance = new SpeechSynthesisUtterance('');
+    utterance.volume = 0;
+    
+    utterance.onstart = () => {
+      speechInitialized = true;
+      window.speechSynthesis.cancel(); // Cancel the silent utterance
+    };
+    
+    utterance.onend = () => {
+      speechInitialized = true;
+      resolve();
+    };
+
+    utterance.onerror = () => {
+      speechInitialized = true;
+      resolve();
+    };
+
+    // Load voices
+    loadVoices().then((voices) => {
+      availableVoices = voices;
+      voicesLoaded = true;
+      window.speechSynthesis.speak(utterance);
+    });
+  });
+}
+
+// Enhanced voice loading for mobile
+function ensureVoicesLoaded(): Promise<SpeechSynthesisVoice[]> {
+  return new Promise((resolve) => {
+    if (voicesLoaded && availableVoices.length > 0) {
+      resolve(availableVoices);
+      return;
+    }
+
+    const loadVoicesWithRetry = (retries = 3) => {
+      const voices = window.speechSynthesis.getVoices();
+      
+      if (voices.length > 0) {
+        availableVoices = voices;
+        voicesLoaded = true;
+        resolve(voices);
+        return;
+      }
+
+      if (retries > 0) {
+        setTimeout(() => loadVoicesWithRetry(retries - 1), 100);
+      } else {
+        // Fallback: resolve with empty array
+        resolve([]);
+      }
+    };
+
+    // Try immediate load
+    loadVoicesWithRetry();
+
+    // Also listen for voiceschanged event
+    const handleVoicesChanged = () => {
+      const voices = window.speechSynthesis.getVoices();
+      if (voices.length > 0) {
+        availableVoices = voices;
+        voicesLoaded = true;
+        window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+        resolve(voices);
+      }
+    };
+
+    window.speechSynthesis.addEventListener('voiceschanged', handleVoicesChanged);
+    
+    // Timeout fallback
+    setTimeout(() => {
+      window.speechSynthesis.removeEventListener('voiceschanged', handleVoicesChanged);
+      resolve(window.speechSynthesis.getVoices());
+    }, 1500);
+  });
+}
+
+export async function speakWord(word: string): Promise<void> {
+  return new Promise(async (resolve) => {
+    if (!isSpeechSupported()) {
       console.warn('Speech synthesis not supported');
       resolve();
       return;
     }
 
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
+    try {
+      // Initialize speech if not already done (important for mobile)
+      if (!speechInitialized) {
+        await initializeSpeech();
+      }
 
-    const utterance = new SpeechSynthesisUtterance(word);
-    
-    // Configure speech settings for children
-    utterance.rate = 0.7; // Slower speech for clarity
-    utterance.pitch = 1.1; // Slightly higher pitch
-    utterance.volume = 1.0;
+      // Ensure voices are loaded
+      const voices = await ensureVoicesLoaded();
 
-    // Try to use a voice suitable for children
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(voice => 
-      voice.lang.startsWith('en') && 
-      (voice.name.includes('Female') || voice.name.includes('Woman'))
-    ) || voices.find(voice => voice.lang.startsWith('en'));
+      // Cancel any ongoing speech with retry for mobile
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        // Wait a bit for cancellation on mobile
+        await new Promise(r => setTimeout(r, 100));
+      }
 
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
+      const utterance = new SpeechSynthesisUtterance(word);
+      
+      // Configure speech settings for children
+      utterance.rate = 0.7; // Slower speech for clarity
+      utterance.pitch = 1.1; // Slightly higher pitch
+      utterance.volume = 1.0;
+
+      // Enhanced voice selection for mobile compatibility
+      let preferredVoice = null;
+      
+      if (voices.length > 0) {
+        // Try to find a female/child-friendly voice first
+        preferredVoice = voices.find(voice => 
+          voice.lang.startsWith('en') && 
+          (voice.name.toLowerCase().includes('female') || 
+           voice.name.toLowerCase().includes('woman') ||
+           voice.name.toLowerCase().includes('karen') ||
+           voice.name.toLowerCase().includes('victoria') ||
+           voice.name.toLowerCase().includes('samantha'))
+        );
+
+        // Fallback to any English voice
+        if (!preferredVoice) {
+          preferredVoice = voices.find(voice => voice.lang.startsWith('en'));
+        }
+
+        // Final fallback to first available voice
+        if (!preferredVoice && voices.length > 0) {
+          preferredVoice = voices[0];
+        }
+      }
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
+      // Enhanced error handling for mobile
+      let resolved = false;
+      
+      utterance.onstart = () => {
+        console.log('Speech started:', word);
+      };
+
+      utterance.onend = () => {
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      };
+
+      utterance.onerror = (event) => {
+        console.error('Speech synthesis error:', event);
+        if (!resolved) {
+          resolved = true;
+          // Don't reject on mobile - just resolve silently
+          resolve();
+        }
+      };
+
+      // Timeout fallback for mobile issues
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          console.warn('Speech timeout, resolving');
+          resolve();
+        }
+      }, 5000);
+
+      // Speak the utterance
+      window.speechSynthesis.speak(utterance);
+
+    } catch (error) {
+      console.error('Error in speakWord:', error);
+      resolve(); // Don't reject - just resolve silently
     }
-
-    utterance.onend = () => resolve();
-    utterance.onerror = (event) => {
-      console.error('Speech synthesis error:', event);
-      reject(event);
-    };
-
-    window.speechSynthesis.speak(utterance);
   });
 }
 
@@ -78,42 +232,86 @@ export function speakEncouragement(type: 'correct' | 'incorrect' | 'try-again'):
   return speakText(randomMessage);
 }
 
-export function speakText(text: string): Promise<void> {
-  return new Promise((resolve, reject) => {
-    if (!('speechSynthesis' in window)) {
+export async function speakText(text: string): Promise<void> {
+  return new Promise(async (resolve) => {
+    if (!isSpeechSupported()) {
       console.warn('Speech synthesis not supported');
       resolve();
       return;
     }
 
-    // Cancel any ongoing speech
-    window.speechSynthesis.cancel();
+    try {
+      // Initialize speech if not already done (important for mobile)
+      if (!speechInitialized) {
+        await initializeSpeech();
+      }
 
-    const utterance = new SpeechSynthesisUtterance(text);
-    
-    // Configure speech settings
-    utterance.rate = 0.8;
-    utterance.pitch = 1.1;
-    utterance.volume = 1.0;
+      // Ensure voices are loaded
+      const voices = await ensureVoicesLoaded();
 
-    // Try to use a child-friendly voice
-    const voices = window.speechSynthesis.getVoices();
-    const preferredVoice = voices.find(voice => 
-      voice.lang.startsWith('en') && 
-      (voice.name.includes('Female') || voice.name.includes('Woman'))
-    ) || voices.find(voice => voice.lang.startsWith('en'));
+      // Cancel any ongoing speech with retry for mobile
+      if (window.speechSynthesis.speaking) {
+        window.speechSynthesis.cancel();
+        await new Promise(r => setTimeout(r, 100));
+      }
 
-    if (preferredVoice) {
-      utterance.voice = preferredVoice;
+      const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Configure speech settings
+      utterance.rate = 0.8;
+      utterance.pitch = 1.1;
+      utterance.volume = 1.0;
+
+      // Enhanced voice selection for mobile compatibility
+      let preferredVoice = null;
+      
+      if (voices.length > 0) {
+        preferredVoice = voices.find(voice => 
+          voice.lang.startsWith('en') && 
+          (voice.name.toLowerCase().includes('female') || 
+           voice.name.toLowerCase().includes('woman') ||
+           voice.name.toLowerCase().includes('karen') ||
+           voice.name.toLowerCase().includes('victoria') ||
+           voice.name.toLowerCase().includes('samantha'))
+        ) || voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+      }
+
+      if (preferredVoice) {
+        utterance.voice = preferredVoice;
+      }
+
+      // Enhanced error handling for mobile
+      let resolved = false;
+      
+      utterance.onend = () => {
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      };
+
+      utterance.onerror = (event) => {
+        console.error('Speech synthesis error:', event);
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      };
+
+      // Timeout fallback for mobile issues
+      setTimeout(() => {
+        if (!resolved) {
+          resolved = true;
+          resolve();
+        }
+      }, 10000);
+
+      window.speechSynthesis.speak(utterance);
+
+    } catch (error) {
+      console.error('Error in speakText:', error);
+      resolve();
     }
-
-    utterance.onend = () => resolve();
-    utterance.onerror = (event) => {
-      console.error('Speech synthesis error:', event);
-      reject(event);
-    };
-
-    window.speechSynthesis.speak(utterance);
   });
 }
 

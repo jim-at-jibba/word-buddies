@@ -7,7 +7,7 @@ import Link from 'next/link';
 import CatMascot from '@/components/CatMascot';
 import ResultsCard from '@/components/ResultsCard';
 import { SessionResult } from '@/types';
-import { speakEncouragement } from '@/lib/speech';
+import { speakEncouragement, initializeSpeech } from '@/lib/speech';
 import { getSessionById } from '@/lib/client-spelling-logic';
 
 function ResultsPageContent() {
@@ -61,6 +61,9 @@ function ResultsPageContent() {
     if (!sessionResult) return;
     
     try {
+      // Initialize speech for mobile compatibility
+      await initializeSpeech();
+      
       let celebrationType: 'correct' | 'incorrect' | 'try-again';
       
       if (sessionResult.celebrationLevel === 'great') {

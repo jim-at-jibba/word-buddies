@@ -8,7 +8,7 @@ import SpellingInput from '@/components/SpellingInput';
 import CatMascot from '@/components/CatMascot';
 import { PracticeWord, SpellingAttempt } from '@/types';
 import { checkSpelling } from '@/lib/client-utils';
-import { speakEncouragement } from '@/lib/speech';
+import { speakEncouragement, initializeSpeech } from '@/lib/speech';
 import { getRandomWord, updateWordStats, createSession, updateSessionDuration } from '@/lib/client-spelling-logic';
 
 export default function PracticePage() {
@@ -29,6 +29,7 @@ export default function PracticePage() {
   const [sessionStartTime, setSessionStartTime] = useState<Date>(new Date());
   const [wordsCompleted, setWordsCompleted] = useState(0);
   const hasInitializedRef = useRef(false);
+  const speechInitializedRef = useRef(false);
 
   useEffect(() => {
     if (!hasInitializedRef.current) {
@@ -77,6 +78,13 @@ export default function PracticePage() {
 
     // Speak encouragement
     try {
+      // Initialize speech on first user interaction (required for mobile)
+      if (!speechInitializedRef.current) {
+        console.log('🔧 Initializing speech for mobile...');
+        await initializeSpeech();
+        speechInitializedRef.current = true;
+      }
+      
       await speakEncouragement(isCorrect ? 'correct' : 'incorrect');
     } catch (error) {
       console.error('Error speaking encouragement:', error);

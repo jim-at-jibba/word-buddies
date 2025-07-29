@@ -1,0 +1,27 @@
+{
+  "version": "7",
+  "dialect": "sqlite",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "6",
+      "when": 1753818195228,
+      "tag": "0000_cheerful_liz_osborn",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1753819211599,
+      "tag": "0001_youthful_callisto",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1753819229689,
+      "tag": "0002_shiny_vindicator",
+      "breakpoints": true
+    }
+  ]
+}

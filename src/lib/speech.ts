@@ -1,4 +1,5 @@
 // Speech synthesis utilities for the spelling app
+import { speakWithElevenLabs, isElevenLabsAvailable } from './elevenlabs-speech';
 
 // Track if speech has been initialized with user interaction
 let speechInitialized = false;
@@ -16,11 +17,17 @@ function isIOSChrome(): boolean {
 }
 
 export function isSpeechSupported(): boolean {
+  // ElevenLabs is always preferred if available
+  if (isElevenLabsAvailable()) {
+    return true;
+  }
+  
+  // Fallback to browser speech synthesis
   if (!('speechSynthesis' in window)) {
     return false;
   }
   
-  // iOS Chrome has poor speech synthesis support but we'll try anyway
+  // iOS Chrome has poor speech synthesis support
   if (isIOSChrome()) {
     console.warn('iOS Chrome detected - speech synthesis may be unreliable');
   }
@@ -115,13 +122,40 @@ function ensureVoicesLoaded(): Promise<SpeechSynthesisVoice[]> {
 }
 
 export async function speakWord(word: string): Promise<void> {
-  return new Promise(async (resolve) => {
-    if (!isSpeechSupported()) {
-      console.warn('Speech synthesis not supported');
-      resolve();
+  if (!isSpeechSupported()) {
+    console.warn('Speech synthesis not supported');
+    return;
+  }
+
+  try {
+    // Try ElevenLabs first if available
+    if (isElevenLabsAvailable()) {
+      console.log('🎙️ Using ElevenLabs for:', word);
+      await speakWithElevenLabs(word);
       return;
     }
 
+    // Fallback to browser speech synthesis
+    console.log('🔊 Using browser speech synthesis for:', word);
+    await speakWordWithBrowserAPI(word);
+
+  } catch (error) {
+    console.error('Error in speakWord:', error);
+    // Try fallback if ElevenLabs failed
+    if (isElevenLabsAvailable()) {
+      console.log('🔄 ElevenLabs failed, trying browser speech fallback');
+      try {
+        await speakWordWithBrowserAPI(word);
+      } catch (fallbackError) {
+        console.error('Both speech methods failed:', fallbackError);
+      }
+    }
+  }
+}
+
+// Browser API speech implementation (fallback)
+async function speakWordWithBrowserAPI(word: string): Promise<void> {
+  return new Promise(async (resolve) => {
     try {
       // Initialize speech if not already done (important for mobile)
       if (!speechInitialized) {
@@ -149,15 +183,36 @@ export async function speakWord(word: string): Promise<void> {
       let preferredVoice = null;
       
       if (voices.length > 0) {
-        // Try to find a female/child-friendly voice first
+        // Try to find Martha specifically first
         preferredVoice = voices.find(voice => 
-          voice.lang.startsWith('en') && 
-          (voice.name.toLowerCase().includes('female') || 
-           voice.name.toLowerCase().includes('woman') ||
-           voice.name.toLowerCase().includes('karen') ||
-           voice.name.toLowerCase().includes('victoria') ||
-           voice.name.toLowerCase().includes('samantha'))
+          voice.name.toLowerCase().includes('martha') && voice.lang.includes('GB')
         );
+
+        // If Flo not found, try other British women's voices
+        if (!preferredVoice) {
+          preferredVoice = voices.find(voice => 
+            voice.lang.startsWith('en') && 
+            (voice.name.toLowerCase().includes('kate') ||      // UK voice on some systems
+             voice.name.toLowerCase().includes('serena') ||    // UK voice on some systems  
+             voice.name.toLowerCase().includes('fiona') ||     // Scottish/UK voice
+             voice.name.toLowerCase().includes('moira') ||     // UK voice on some systems
+             voice.name.toLowerCase().includes('tessa') ||     // UK voice on some systems
+             voice.lang.includes('GB') ||                      // British English
+             voice.lang.includes('UK'))                        // UK English
+          );
+        }
+
+        // Fallback to generic female voices
+        if (!preferredVoice) {
+          preferredVoice = voices.find(voice => 
+            voice.lang.startsWith('en') && 
+            (voice.name.toLowerCase().includes('female') || 
+             voice.name.toLowerCase().includes('woman') ||
+             voice.name.toLowerCase().includes('karen') ||
+             voice.name.toLowerCase().includes('victoria') ||
+             voice.name.toLowerCase().includes('samantha'))
+          );
+        }
 
         // Fallback to any English voice
         if (!preferredVoice) {
@@ -178,7 +233,7 @@ export async function speakWord(word: string): Promise<void> {
       let resolved = false;
       
       utterance.onstart = () => {
-        console.log('Speech started:', word);
+        console.log('Browser speech started:', word);
       };
 
       utterance.onend = () => {
@@ -190,11 +245,10 @@ export async function speakWord(word: string): Promise<void> {
       };
 
       utterance.onerror = (event) => {
-        console.error('Speech synthesis error:', event);
+        console.error('Browser speech synthesis error:', event);
         if (!resolved) {
           resolved = true;
           clearTimeout(timeoutId);
-          // Don't reject on mobile - just resolve silently
           resolve();
         }
       };
@@ -204,7 +258,7 @@ export async function speakWord(word: string): Promise<void> {
       const timeoutId = setTimeout(() => {
         if (!resolved) {
           resolved = true;
-          console.warn('Speech timeout, resolving');
+          console.warn('Browser speech timeout, resolving');
           // Force cancel on iOS
           if (isIOS()) {
             try {
@@ -226,7 +280,7 @@ export async function speakWord(word: string): Promise<void> {
           if (!resolved) {
             resolved = true;
             clearTimeout(timeoutId);
-            console.warn('iOS Chrome speech fallback triggered');
+            console.warn('iOS Chrome browser speech fallback triggered');
             try {
               window.speechSynthesis.cancel();
             } catch (e) {
@@ -238,8 +292,8 @@ export async function speakWord(word: string): Promise<void> {
       }
 
     } catch (error) {
-      console.error('Error in speakWord:', error);
-      resolve(); // Don't reject - just resolve silently
+      console.error('Error in browser speech:', error);
+      resolve();
     }
   });
 }
@@ -280,13 +334,40 @@ export function speakEncouragement(type: 'correct' | 'incorrect' | 'try-again'):
 }
 
 export async function speakText(text: string): Promise<void> {
-  return new Promise(async (resolve) => {
-    if (!isSpeechSupported()) {
-      console.warn('Speech synthesis not supported');
-      resolve();
+  if (!isSpeechSupported()) {
+    console.warn('Speech synthesis not supported');
+    return;
+  }
+
+  try {
+    // Try ElevenLabs first if available
+    if (isElevenLabsAvailable()) {
+      console.log('🎙️ Using ElevenLabs for text:', text);
+      await speakWithElevenLabs(text);
       return;
     }
 
+    // Fallback to browser speech synthesis
+    console.log('🔊 Using browser speech synthesis for text:', text);
+    await speakTextWithBrowserAPI(text);
+
+  } catch (error) {
+    console.error('Error in speakText:', error);
+    // Try fallback if ElevenLabs failed
+    if (isElevenLabsAvailable()) {
+      console.log('🔄 ElevenLabs failed, trying browser speech fallback');
+      try {
+        await speakTextWithBrowserAPI(text);
+      } catch (fallbackError) {
+        console.error('Both speech methods failed:', fallbackError);
+      }
+    }
+  }
+}
+
+// Browser API text speech implementation (fallback)
+async function speakTextWithBrowserAPI(text: string): Promise<void> {
+  return new Promise(async (resolve) => {
     try {
       // Initialize speech if not already done (important for mobile)
       if (!speechInitialized) {
@@ -313,14 +394,41 @@ export async function speakText(text: string): Promise<void> {
       let preferredVoice = null;
       
       if (voices.length > 0) {
+        // Try to find Martha specifically first
         preferredVoice = voices.find(voice => 
-          voice.lang.startsWith('en') && 
-          (voice.name.toLowerCase().includes('female') || 
-           voice.name.toLowerCase().includes('woman') ||
-           voice.name.toLowerCase().includes('karen') ||
-           voice.name.toLowerCase().includes('victoria') ||
-           voice.name.toLowerCase().includes('samantha'))
-        ) || voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+          voice.name.toLowerCase().includes('martha') && voice.lang.includes('GB')
+        );
+
+        // If Flo not found, try other British women's voices
+        if (!preferredVoice) {
+          preferredVoice = voices.find(voice => 
+            voice.lang.startsWith('en') && 
+            (voice.name.toLowerCase().includes('kate') ||      // UK voice on some systems
+             voice.name.toLowerCase().includes('serena') ||    // UK voice on some systems  
+             voice.name.toLowerCase().includes('fiona') ||     // Scottish/UK voice
+             voice.name.toLowerCase().includes('moira') ||     // UK voice on some systems
+             voice.name.toLowerCase().includes('tessa') ||     // UK voice on some systems
+             voice.lang.includes('GB') ||                      // British English
+             voice.lang.includes('UK'))                        // UK English
+          );
+        }
+
+        // Fallback to generic female voices
+        if (!preferredVoice) {
+          preferredVoice = voices.find(voice => 
+            voice.lang.startsWith('en') && 
+            (voice.name.toLowerCase().includes('female') || 
+             voice.name.toLowerCase().includes('woman') ||
+             voice.name.toLowerCase().includes('karen') ||
+             voice.name.toLowerCase().includes('victoria') ||
+             voice.name.toLowerCase().includes('samantha'))
+          );
+        }
+
+        // Fallback to any English voice or first voice
+        if (!preferredVoice) {
+          preferredVoice = voices.find(voice => voice.lang.startsWith('en')) || voices[0];
+        }
       }
 
       if (preferredVoice) {
@@ -339,7 +447,7 @@ export async function speakText(text: string): Promise<void> {
       };
 
       utterance.onerror = (event) => {
-        console.error('Speech synthesis error:', event);
+        console.error('Browser speech synthesis error:', event);
         if (!resolved) {
           resolved = true;
           clearTimeout(timeoutId);
@@ -352,7 +460,7 @@ export async function speakText(text: string): Promise<void> {
       const timeoutId = setTimeout(() => {
         if (!resolved) {
           resolved = true;
-          console.warn('Speech text timeout, resolving');
+          console.warn('Browser speech text timeout, resolving');
           // Force cancel on iOS
           if (isIOS()) {
             try {
@@ -373,7 +481,7 @@ export async function speakText(text: string): Promise<void> {
           if (!resolved) {
             resolved = true;
             clearTimeout(timeoutId);
-            console.warn('iOS Chrome speech text fallback triggered');
+            console.warn('iOS Chrome browser speech text fallback triggered');
             try {
               window.speechSynthesis.cancel();
             } catch (e) {
@@ -385,7 +493,7 @@ export async function speakText(text: string): Promise<void> {
       }
 
     } catch (error) {
-      console.error('Error in speakText:', error);
+      console.error('Error in browser speech text:', error);
       resolve();
     }
   });

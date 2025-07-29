@@ -6,16 +6,9 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "db:generate": "drizzle-kit generate",
-    "db:migrate": "drizzle-kit migrate",
-    "db:studio": "drizzle-kit studio"
+    "lint": "next lint"
   },
   "dependencies": {
-    "@types/better-sqlite3": "^7.6.13",
-    "better-sqlite3": "^12.2.0",
-    "drizzle-kit": "^0.31.4",
-    "drizzle-orm": "^0.44.4",
     "framer-motion": "^12.23.11",
     "next": "15.4.4",
     "react": "19.1.0",

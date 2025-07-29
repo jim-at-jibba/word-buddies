@@ -27,8 +27,9 @@ export default function WordPlayer({
   }, []);
 
   useEffect(() => {
+    console.log('🎵 WordPlayer useEffect triggered - word:', word, 'autoPlay:', autoPlay, 'speechSupported:', speechSupported, 'hasPlayedOnce:', hasPlayedOnce);
     if (autoPlay && speechSupported && word && !hasPlayedOnce) {
-      console.log('WordPlayer: Auto-playing word:', word);
+      console.log('🔊 WordPlayer: Auto-playing word:', word);
       playWord();
       setHasPlayedOnce(true);
     }
@@ -37,9 +38,11 @@ export default function WordPlayer({
   const playWord = async () => {
     if (!speechSupported || !word || isPlaying) return;
 
+    console.log('🗣️ About to speak word:', word);
     setIsPlaying(true);
     try {
       await speakWord(word);
+      console.log('✅ Finished speaking word:', word);
       onPlayComplete?.();
     } catch (error) {
       console.error('Error playing word:', error);

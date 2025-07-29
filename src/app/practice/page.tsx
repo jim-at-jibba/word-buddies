@@ -13,6 +13,11 @@ import { speakEncouragement } from '@/lib/speech';
 export default function PracticePage() {
   const router = useRouter();
   const [currentWord, setCurrentWord] = useState<PracticeWord | null>(null);
+  const [currentWordSession, setCurrentWordSession] = useState<{
+    word: string;
+    sessionId: string;
+    fetchedAt: Date;
+  } | null>(null);
   const [attempts, setAttempts] = useState<SpellingAttempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -30,13 +35,22 @@ export default function PracticePage() {
   }, []);
 
   const fetchNextWord = async () => {
+    console.log('🔄 fetchNextWord() called at:', new Date().toISOString());
+    console.trace('Call stack:');
     setIsLoading(true);
     try {
       const response = await fetch('/api/words');
       const data = await response.json();
       
       if (data.success) {
+        const sessionId = `word_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        console.log('✅ Fetched new word:', data.data.word, 'sessionId:', sessionId, 'at:', new Date().toISOString());
         setCurrentWord(data.data);
+        setCurrentWordSession({
+          word: data.data.word,
+          sessionId,
+          fetchedAt: new Date()
+        });
       } else {
         console.error('Error fetching word:', data.error);
       }
@@ -48,11 +62,15 @@ export default function PracticePage() {
   };
 
   const handleSpellingSubmit = async (userSpelling: string) => {
+    console.log('📝 handleSpellingSubmit called with:', userSpelling, 'at:', new Date().toISOString());
     if (!currentWord || isSubmitting) return;
 
     setIsSubmitting(true);
     
-    const isCorrect = checkSpelling(userSpelling, currentWord.word);
+    // Capture the word that was actually played to prevent race conditions
+    const wordToCheck = currentWordSession?.word || currentWord.word;
+    console.log('User typed:', userSpelling, 'Checking against:', wordToCheck, 'Session:', currentWordSession?.sessionId);
+    const isCorrect = checkSpelling(userSpelling, wordToCheck);
     
     // Show feedback
     setFeedback({
@@ -70,7 +88,7 @@ export default function PracticePage() {
 
     // Add to attempts
     const newAttempt: SpellingAttempt = {
-      word: currentWord.word,
+      word: wordToCheck,
       userSpelling,
       isCorrect,
       attempts: 1
@@ -87,7 +105,7 @@ export default function PracticePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          word: currentWord.word,
+          word: wordToCheck,
           userSpelling,
           isCorrect,
         }),
@@ -229,7 +247,7 @@ export default function PracticePage() {
                     <p className="font-kid-friendly text-cat-gray">
                       The correct spelling is: 
                       <span className="font-bold text-cat-dark ml-2">
-                        {currentWord.word}
+                        {currentWordSession?.word || currentWord.word}
                       </span>
                     </p>
                   </motion.div>
@@ -253,7 +271,7 @@ export default function PracticePage() {
                 </div>
 
                 <WordPlayer 
-                  word={currentWord.word}
+                  word={currentWordSession?.word || currentWord.word}
                   autoPlay={true}
                   className="mb-8"
                 />

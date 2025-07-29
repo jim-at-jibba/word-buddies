@@ -5,8 +5,27 @@ let speechInitialized = false;
 let voicesLoaded = false;
 let availableVoices: SpeechSynthesisVoice[] = [];
 
+// Detect iOS/iPhone
+function isIOS(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
+// Detect iOS Chrome specifically
+function isIOSChrome(): boolean {
+  return isIOS() && /CriOS/.test(navigator.userAgent);
+}
+
 export function isSpeechSupported(): boolean {
-  return 'speechSynthesis' in window;
+  if (!('speechSynthesis' in window)) {
+    return false;
+  }
+  
+  // iOS Chrome has poor speech synthesis support but we'll try anyway
+  if (isIOSChrome()) {
+    console.warn('iOS Chrome detected - speech synthesis may be unreliable');
+  }
+  
+  return true;
 }
 
 // Initialize speech synthesis with user interaction (required for mobile)
@@ -165,6 +184,7 @@ export async function speakWord(word: string): Promise<void> {
       utterance.onend = () => {
         if (!resolved) {
           resolved = true;
+          clearTimeout(timeoutId);
           resolve();
         }
       };
@@ -173,22 +193,49 @@ export async function speakWord(word: string): Promise<void> {
         console.error('Speech synthesis error:', event);
         if (!resolved) {
           resolved = true;
+          clearTimeout(timeoutId);
           // Don't reject on mobile - just resolve silently
           resolve();
         }
       };
 
-      // Timeout fallback for mobile issues
-      setTimeout(() => {
+      // iOS-specific timeout (very short for iOS Chrome issues)
+      const timeoutDuration = isIOSChrome() ? 800 : (isIOS() ? 2000 : 5000);
+      const timeoutId = setTimeout(() => {
         if (!resolved) {
           resolved = true;
           console.warn('Speech timeout, resolving');
+          // Force cancel on iOS
+          if (isIOS()) {
+            try {
+              window.speechSynthesis.cancel();
+            } catch (e) {
+              // Ignore errors
+            }
+          }
           resolve();
         }
-      }, 5000);
+      }, timeoutDuration);
 
       // Speak the utterance
       window.speechSynthesis.speak(utterance);
+      
+      // iOS Chrome fallback - if no events fire within 500ms, just resolve
+      if (isIOSChrome()) {
+        setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeoutId);
+            console.warn('iOS Chrome speech fallback triggered');
+            try {
+              window.speechSynthesis.cancel();
+            } catch (e) {
+              // Ignore errors
+            }
+            resolve();
+          }
+        }, 500);
+      }
 
     } catch (error) {
       console.error('Error in speakWord:', error);
@@ -286,6 +333,7 @@ export async function speakText(text: string): Promise<void> {
       utterance.onend = () => {
         if (!resolved) {
           resolved = true;
+          clearTimeout(timeoutId);
           resolve();
         }
       };
@@ -294,19 +342,47 @@ export async function speakText(text: string): Promise<void> {
         console.error('Speech synthesis error:', event);
         if (!resolved) {
           resolved = true;
+          clearTimeout(timeoutId);
           resolve();
         }
       };
 
-      // Timeout fallback for mobile issues
-      setTimeout(() => {
+      // iOS-specific timeout (very short for iOS Chrome issues)
+      const timeoutDuration = isIOSChrome() ? 800 : (isIOS() ? 2000 : 10000);
+      const timeoutId = setTimeout(() => {
         if (!resolved) {
           resolved = true;
+          console.warn('Speech text timeout, resolving');
+          // Force cancel on iOS
+          if (isIOS()) {
+            try {
+              window.speechSynthesis.cancel();
+            } catch (e) {
+              // Ignore errors
+            }
+          }
           resolve();
         }
-      }, 10000);
+      }, timeoutDuration);
 
       window.speechSynthesis.speak(utterance);
+      
+      // iOS Chrome fallback - if no events fire within 500ms, just resolve
+      if (isIOSChrome()) {
+        setTimeout(() => {
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeoutId);
+            console.warn('iOS Chrome speech text fallback triggered');
+            try {
+              window.speechSynthesis.cancel();
+            } catch (e) {
+              // Ignore errors
+            }
+            resolve();
+          }
+        }, 500);
+      }
 
     } catch (error) {
       console.error('Error in speakText:', error);

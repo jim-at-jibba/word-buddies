@@ -28,6 +28,7 @@ export default function WordPlayer({
 
   useEffect(() => {
     if (autoPlay && speechSupported && word && !hasPlayedOnce) {
+      console.log('WordPlayer: Auto-playing word:', word);
       playWord();
       setHasPlayedOnce(true);
     }

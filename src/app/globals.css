@@ -1,8 +1,12 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Comic+Neue:ital,wght@0,300;0,400;0,700;1,400&display=swap');
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #FFF4E6;
+  --foreground: #2C2C2E;
+  --cat-primary: #FF8C42;
+  --cat-secondary: #FFF4E6;
+  --cat-accent: #34D399;
 }
 
 @theme inline {
@@ -12,15 +16,49 @@
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  min-height: 100vh;
+}
+
+/* Custom animations for cat theme */
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-10px); }
+}
+
+/* Interactive elements */
+.cat-button {
+  @apply bg-cat-orange text-white font-kid-friendly font-bold py-3 px-6 rounded-cat 
+         shadow-cat hover:shadow-cat-hover transform hover:scale-105 
+         transition-all duration-200 ease-in-out;
+}
+
+.cat-input {
+  @apply w-full p-4 text-xl md:text-2xl border-4 border-cat-orange rounded-cat
+         focus:ring-4 focus:ring-cat-orange/50 focus:border-cat-orange
+         bg-white font-kid-friendly text-center placeholder:text-cat-gray/60
+         transition-all duration-200;
+}
+
+/* Cat mascot styles */
+.cat-mascot {
+  @apply animate-cat-float hover:animate-cat-bounce transition-all duration-300
+         cursor-pointer;
+}
+
+/* Results styling */
+.correct-word {
+  @apply bg-cat-success/20 border-cat-success text-cat-success border-2 rounded-cat p-3;
+}
+
+.incorrect-word {
+  @apply bg-cat-error/20 border-cat-error text-cat-error border-2 rounded-cat p-3;
 }

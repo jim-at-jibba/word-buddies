@@ -128,12 +128,12 @@ class BrowserDB {
 
       request.onsuccess = () => {
         const words = request.result;
-        // Also include words that have never been attempted (nextReview is null/undefined)
+        // Also include words that have never been attempted (for practice selection)
         const allRequest = store.getAll();
         allRequest.onsuccess = () => {
           const allWords = allRequest.result;
-          const nullReviewWords = allWords.filter(w => !w.nextReview);
-          resolve([...words, ...nullReviewWords]);
+          const newWords = allWords.filter(w => !w.nextReview && w.attempts === 0);
+          resolve([...words, ...newWords]);
         };
       };
       request.onerror = () => reject(request.error);

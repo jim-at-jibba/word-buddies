@@ -1,5 +1,5 @@
 import { browserDB, initializeBrowserStorage, StoredWord, StoredSession, StoredWordAttempt } from './storage';
-import { PracticeWord, WordWithStats, SessionResult, ProgressStats, SpellingAttempt } from '@/types';
+import { PracticeWord, WordWithStats, SessionResult, ProgressStats } from '@/types';
 
 // Spaced repetition intervals (in days)
 const SPACED_REPETITION_INTERVALS = [1, 3, 7, 14, 30];
@@ -246,7 +246,14 @@ export async function getWordsNeedingReview(): Promise<WordWithStats[]> {
     await ensureInitialized();
     
     const now = Date.now();
-    const reviewWords = await browserDB.getWordsForReview(now);
+    const allWords = await browserDB.getAllWords();
+    
+    // Only include words that have been attempted AND need review
+    const reviewWords = allWords.filter(word => 
+      word.attempts > 0 && // Must have been attempted at least once
+      word.nextReview && // Must have a scheduled review date
+      word.nextReview <= now // Review date must be due
+    );
     
     return reviewWords
       .map(word => ({
@@ -260,10 +267,10 @@ export async function getWordsNeedingReview(): Promise<WordWithStats[]> {
         successRate: word.attempts > 0 ? word.correctAttempts / word.attempts : 0,
       }))
       .sort((a, b) => {
-        // Sort by nextReview date, putting null values first
+        // Sort by nextReview date (earliest first)
         if (!a.nextReview && !b.nextReview) return 0;
-        if (!a.nextReview) return -1;
-        if (!b.nextReview) return 1;
+        if (!a.nextReview) return 1;
+        if (!b.nextReview) return -1;
         return a.nextReview.getTime() - b.nextReview.getTime();
       })
       .slice(0, 20);

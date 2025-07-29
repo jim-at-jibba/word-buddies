@@ -7,7 +7,7 @@ import WordPlayer from '@/components/WordPlayer';
 import SpellingInput from '@/components/SpellingInput';
 import CatMascot from '@/components/CatMascot';
 import { PracticeWord, SpellingAttempt } from '@/types';
-import { checkSpelling } from '@/lib/spelling-logic';
+import { checkSpelling } from '@/lib/client-utils';
 import { speakEncouragement } from '@/lib/speech';
 
 export default function PracticePage() {

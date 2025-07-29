@@ -292,9 +292,14 @@ export async function getProgressStats(): Promise<ProgressStats> {
       word => word.correctAttempts >= 3 && (word.correctAttempts / word.attempts) >= 0.8
     );
 
-    // Get words needing review
+    // Get words needing review (only words that have been attempted)
     const now = Date.now();
-    const reviewWords = await browserDB.getWordsForReview(now);
+    const allWords = await browserDB.getAllWords();
+    const reviewWords = allWords.filter(word => 
+      word.attempts > 0 && // Must have been attempted at least once
+      word.nextReview && // Must have a scheduled review date
+      word.nextReview <= now // Review date must be due
+    );
     const wordsNeedingReview = reviewWords.length;
 
     // Get recent sessions for average score

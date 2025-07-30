@@ -1,18 +1,20 @@
-'use client';
+"use client";
 
-import { useState, useEffect, lazy, Suspense } from 'react';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import CatMascot from '@/components/CatMascot';
-import { ProgressStats } from '@/types';
-import { getProgressStats } from '@/lib/client-spelling-logic';
-import { useUserName } from '@/hooks/useSettings';
+import { useState, useEffect, lazy, Suspense } from "react";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import CatMascot from "@/components/CatMascot";
+import { ProgressStats } from "@/types";
+import { getProgressStats } from "@/lib/client-spelling-logic";
+import { useUserName } from "@/hooks/useSettings";
 
 // Lazy load the ProgressTracker component
-const ProgressTracker = lazy(() => import('@/components/ProgressTracker'));
+const ProgressTracker = lazy(() => import("@/components/ProgressTracker"));
 
 export default function Home() {
-  const [progressStats, setProgressStats] = useState<ProgressStats | null>(null);
+  const [progressStats, setProgressStats] = useState<ProgressStats | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const { name } = useUserName();
 
@@ -25,7 +27,7 @@ export default function Home() {
       const stats = await getProgressStats();
       setProgressStats(stats);
     } catch (error) {
-      console.error('Error fetching progress:', error);
+      console.error("Error fetching progress:", error);
       // Set default stats on error
       setProgressStats({
         totalWordsLearned: 0,
@@ -59,14 +61,14 @@ export default function Home() {
             </p>
           ) : null}
           <p className="text-lg md:text-xl font-kid-friendly text-cat-gray max-w-2xl mx-auto">
-            Learn spelling with our friendly cat! Perfect for Year 3 students (ages 7-8)
+            Learn spelling with our friendly cat! Perfect for Year 3 and 4
+            students (ages 7-9)
           </p>
         </motion.header>
 
         {/* Main Content */}
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8 items-start">
-            
             {/* Welcome Section */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
@@ -75,14 +77,16 @@ export default function Home() {
               className="bg-white rounded-cat-lg p-8 shadow-cat text-center"
             >
               <CatMascot mood="happy" size="large" />
-              
+
               <h2 className="text-2xl font-kid-friendly font-bold text-cat-dark mt-6 mb-4">
-                {name ? `Ready to Practice, ${name}?` : "Ready to Practice Spelling?"}
+                {name
+                  ? `Ready to Practice, ${name}?`
+                  : "Ready to Practice Spelling?"}
               </h2>
-              
+
               <p className="font-kid-friendly text-cat-gray mb-6">
-                Click below to start your spelling adventure! I&apos;ll help you learn new words 
-                and practice the ones you already know.
+                Click below to start your spelling adventure! I&apos;ll help you
+                learn new words and practice the ones you already know.
               </p>
 
               <Link href="/practice">
@@ -109,22 +113,36 @@ export default function Home() {
                 <div className="bg-white rounded-cat-lg p-8 shadow-cat text-center">
                   <motion.div
                     animate={{ rotate: 360 }}
-                    transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                    transition={{
+                      duration: 1,
+                      repeat: Infinity,
+                      ease: "linear",
+                    }}
                     className="w-8 h-8 border-4 border-cat-orange border-t-transparent rounded-full mx-auto mb-4"
                   />
-                  <p className="font-kid-friendly text-cat-gray">Loading your progress...</p>
+                  <p className="font-kid-friendly text-cat-gray">
+                    Loading your progress...
+                  </p>
                 </div>
               ) : progressStats ? (
-                <Suspense fallback={
-                  <div className="bg-white rounded-cat-lg p-8 shadow-cat text-center">
-                    <motion.div
-                      animate={{ rotate: 360 }}
-                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                      className="w-6 h-6 border-2 border-cat-orange border-t-transparent rounded-full mx-auto mb-4"
-                    />
-                    <p className="font-kid-friendly text-cat-gray">Loading progress...</p>
-                  </div>
-                }>
+                <Suspense
+                  fallback={
+                    <div className="bg-white rounded-cat-lg p-8 shadow-cat text-center">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
+                        className="w-6 h-6 border-2 border-cat-orange border-t-transparent rounded-full mx-auto mb-4"
+                      />
+                      <p className="font-kid-friendly text-cat-gray">
+                        Loading progress...
+                      </p>
+                    </div>
+                  }
+                >
                   <ProgressTracker stats={progressStats} />
                 </Suspense>
               ) : (
@@ -153,18 +171,20 @@ export default function Home() {
                 {
                   icon: "🔊",
                   title: "Listen & Learn",
-                  description: "Hear each word spoken clearly to help with pronunciation"
+                  description:
+                    "Hear each word spoken clearly to help with pronunciation",
                 },
                 {
                   icon: "🎯",
                   title: "Smart Practice",
-                  description: "Focus on words you need to practice most"
+                  description: "Focus on words you need to practice most",
                 },
                 {
                   icon: "🏆",
                   title: "Track Progress",
-                  description: "See how you're improving with detailed statistics"
-                }
+                  description:
+                    "See how you're improving with detailed statistics",
+                },
               ].map((feature, index) => (
                 <motion.div
                   key={feature.title}
@@ -189,3 +209,4 @@ export default function Home() {
     </div>
   );
 }
+

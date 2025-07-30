@@ -1,15 +1,17 @@
-'use client';
+"use client";
 
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import CatMascot from '@/components/CatMascot';
-import { useSettings } from '@/hooks/useSettings';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import CatMascot from "@/components/CatMascot";
+import { useSettings } from "@/hooks/useSettings";
+import { YEAR_3_WORDS } from "@/lib/data/words";
 
 export default function SettingsPage() {
   const router = useRouter();
   const { settings, loading, error, updateSettings } = useSettings();
-  const [name, setName] = useState('');
+  const [name, setName] = useState("");
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
@@ -31,12 +33,12 @@ export default function SettingsPage() {
     try {
       await updateSettings({ name: name.trim() || undefined });
       setSaveSuccess(true);
-      
+
       // Hide success message after 2 seconds
       setTimeout(() => setSaveSuccess(false), 2000);
     } catch (err) {
-      console.error('Error saving settings:', err);
-      setSaveError('Failed to save settings. Please try again.');
+      console.error("Error saving settings:", err);
+      setSaveError("Failed to save settings. Please try again.");
     } finally {
       setSaving(false);
     }
@@ -75,16 +77,26 @@ export default function SettingsPage() {
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M19 12H5m0 0l7 7m-7-7l7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M19 12H5m0 0l7 7m-7-7l7-7"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
               <span className="font-kid-friendly font-bold">Back</span>
             </motion.button>
-            
             <h1 className="text-3xl md:text-4xl font-kid-friendly font-bold text-cat-dark">
               ⚙️ Settings
             </h1>
-            
             <div className="w-16"></div> {/* Spacer for centering */}
           </div>
         </motion.header>
@@ -92,7 +104,6 @@ export default function SettingsPage() {
         {/* Main Content */}
         <div className="max-w-2xl mx-auto">
           <div className="grid md:grid-cols-2 gap-8 items-start">
-            
             {/* Settings Form */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
@@ -103,7 +114,7 @@ export default function SettingsPage() {
               <h2 className="text-2xl font-kid-friendly font-bold text-cat-dark mb-6">
                 👤 Your Profile
               </h2>
-              
+
               {/* Error Display */}
               {(error || saveError) && (
                 <motion.div
@@ -132,8 +143,8 @@ export default function SettingsPage() {
 
               {/* Name Input */}
               <div className="mb-6">
-                <label 
-                  htmlFor="name" 
+                <label
+                  htmlFor="name"
                   className="block font-kid-friendly font-bold text-cat-dark mb-3"
                 >
                   What&apos;s your name?
@@ -184,7 +195,7 @@ export default function SettingsPage() {
               <motion.button
                 onClick={handleSave}
                 disabled={saving}
-                className={`cat-button text-lg px-6 py-3 w-full ${saving ? 'opacity-50 cursor-not-allowed' : ''}`}
+                className={`cat-button text-lg px-6 py-3 w-full ${saving ? "opacity-50 cursor-not-allowed" : ""}`}
                 whileHover={saving ? {} : { scale: 1.02 }}
                 whileTap={saving ? {} : { scale: 0.98 }}
               >
@@ -193,7 +204,11 @@ export default function SettingsPage() {
                     <>
                       <motion.div
                         animate={{ rotate: 360 }}
-                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        transition={{
+                          duration: 1,
+                          repeat: Infinity,
+                          ease: "linear",
+                        }}
                         className="w-5 h-5 border-2 border-white border-t-transparent rounded-full"
                       />
                       <span>Saving...</span>
@@ -216,7 +231,7 @@ export default function SettingsPage() {
               className="text-center"
             >
               <CatMascot mood="happy" size="large" />
-              
+
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -224,17 +239,118 @@ export default function SettingsPage() {
                 className="mt-6"
               >
                 <h3 className="text-xl font-kid-friendly font-bold text-cat-dark mb-3">
-                  Let&apos;s personalize your experience!
+                  Let's personalize your experience!
                 </h3>
                 <p className="font-kid-friendly text-cat-gray">
-                  Tell me your name so I can cheer you on during spelling practice! 
-                  You can always change it later.
+                  Tell me your name so I can cheer you on during spelling
+                  practice! You can always change it later.
                 </p>
               </motion.div>
             </motion.div>
           </div>
+
+          {/* Learning Resources Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
+            className="mt-12"
+          >
+            <div className="bg-white rounded-cat-lg p-8 shadow-cat">
+              <h2 className="text-2xl font-kid-friendly font-bold text-cat-dark mb-6">
+                📚 Learning Resources
+              </h2>
+
+              <div className="grid md:grid-cols-2 gap-4">
+                {/* Word List Link */}
+                <Link href="/word-list">
+                  <motion.div
+                    className="p-6 border-2 border-cat-light hover:border-cat-orange rounded-cat bg-cat-cream hover:bg-cat-light transition-all duration-200 cursor-pointer h-full"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-start justify-between h-full">
+                      <div className="flex-1">
+                        <div className="text-3xl mb-3">📝</div>
+                        <h3 className="font-kid-friendly font-bold text-cat-dark text-lg mb-2">
+                          View All Words
+                        </h3>
+                        <p className="font-kid-friendly text-cat-gray text-sm">
+                          Browse all {YEAR_3_WORDS.length} Year 3 and 4 spelling
+                          words available for practice. Search and sort to find
+                          specific words! Words sourced from{" "}
+                          <a
+                            href="https://home.oxfordowl.co.uk/"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-bold text-cat-orange hover:text-cat-dark transition-colors duration-200 underline"
+                          >
+                            Oxford Owl
+                          </a>
+                          .
+                        </p>
+                      </div>
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="text-cat-orange ml-4 flex-shrink-0"
+                      >
+                        <path
+                          d="M5 12h14m0 0l-7-7m7 7l-7 7"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                  </motion.div>
+                </Link>
+
+                {/* Future Resource - Commented for extensibility */}
+                {/*
+                <Link href="/progress-report">
+                  <motion.div
+                    className="p-6 border-2 border-cat-light hover:border-cat-orange rounded-cat bg-cat-cream hover:bg-cat-light transition-all duration-200 cursor-pointer h-full"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-start justify-between h-full">
+                      <div className="flex-1">
+                        <div className="text-3xl mb-3">📊</div>
+                        <h3 className="font-kid-friendly font-bold text-cat-dark text-lg mb-2">
+                          Progress Report
+                        </h3>
+                        <p className="font-kid-friendly text-cat-gray text-sm">
+                          View detailed statistics about your spelling progress and achievements.
+                        </p>
+                      </div>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="text-cat-orange ml-4 flex-shrink-0">
+                        <path d="M5 12h14m0 0l-7-7m7 7l-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      </svg>
+                    </div>
+                  </motion.div>
+                </Link>
+                */}
+
+                {/* Placeholder for future resources */}
+                <div className="p-6 border-2 border-dashed border-cat-light rounded-cat bg-cat-cream/50 flex items-center justify-center">
+                  <div className="text-center">
+                    <div className="text-4xl mb-3 opacity-50">🚀</div>
+                    <p className="font-kid-friendly text-cat-gray text-sm">
+                      More learning resources coming soon!
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
     </div>
   );
 }
+

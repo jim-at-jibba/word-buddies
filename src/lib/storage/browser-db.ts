@@ -1,13 +1,7 @@
-import { StoredWord, StoredSession, StoredWordAttempt, BrowserStorageData, StorageKey } from './types';
+import { StoredWord, StoredSession, StoredWordAttempt } from './types';
 
 const DB_NAME = 'WordBuddiesDB';
 const DB_VERSION = 1;
-const STORAGE_KEYS = {
-  words: 'wb_words',
-  sessions: 'wb_sessions',
-  wordAttempts: 'wb_word_attempts',
-  metadata: 'wb_metadata'
-};
 
 class BrowserDB {
   private db: IDBDatabase | null = null;

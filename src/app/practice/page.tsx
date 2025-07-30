@@ -12,7 +12,7 @@ import OfflineIndicator from '@/components/OfflineIndicator';
 import { useNotifications } from '@/hooks/useNotifications';
 import { PracticeWord, SpellingAttempt } from '@/types';
 import { checkSpelling } from '@/lib/client-utils';
-import { speakEncouragement, initializeSpeech } from '@/lib/speech';
+import { speakEncouragement, initializeSpeech, speakWord } from '@/lib/speech';
 import { getRandomWord, updateWordStats, createSession, updateSessionDuration } from '@/lib/client-spelling-logic';
 import { logger } from '@/lib/logger';
 
@@ -37,12 +37,21 @@ export default function PracticePage() {
   } | null>(null);
   const [sessionStartTime, setSessionStartTime] = useState<Date>(new Date());
   const [wordsCompleted, setWordsCompleted] = useState(0);
+  
+  // Retry logic state
+  const [currentWordAttemptCount, setCurrentWordAttemptCount] = useState(0);
+  const [isRetrying, setIsRetrying] = useState(false);
+  const [userFirstAttempt, setUserFirstAttempt] = useState<string>('');
   const hasInitializedRef = useRef(false);
   const speechInitializedRef = useRef(false);
 
   const fetchNextWord = useCallback(async () => {
     logger.debug('fetchNextWord() called at:', new Date().toISOString());
     setIsLoading(true);
+    // Reset retry state for new word
+    setCurrentWordAttemptCount(0);
+    setIsRetrying(false);
+    setUserFirstAttempt('');
     try {
       const word = await getRandomWord();
       logger.debug('Fetched new word:', word.word, 'at:', new Date().toISOString());
@@ -84,63 +93,163 @@ export default function PracticePage() {
 
     setIsSubmitting(true);
     const isCorrect = checkSpelling(userSpelling, wordToCheck);
+    const attemptNumber = currentWordAttemptCount + 1;
+    setCurrentWordAttemptCount(attemptNumber);
     
-    // Show feedback
-    setFeedback({
-      show: true,
-      isCorrect,
-      message: isCorrect ? '🎉 Perfect!' : '💪 Good try!'
-    });
+    // Handle correct answer (first or second attempt)
+    if (isCorrect) {
+      // Show success feedback
+      setFeedback({
+        show: true,
+        isCorrect: true,
+        message: attemptNumber === 1 ? '🎉 Perfect!' : '🎉 Great job on the retry!'
+      });
 
-    // Speak encouragement
-    try {
-      // Initialize speech on first user interaction (required for mobile)
-      if (!speechInitializedRef.current) {
-        console.log('🔧 Initializing speech for mobile...');
-        await initializeSpeech();
-        speechInitializedRef.current = true;
+      // Speak encouragement
+      try {
+        if (!speechInitializedRef.current) {
+          console.log('🔧 Initializing speech for mobile...');
+          await initializeSpeech();
+          speechInitializedRef.current = true;
+        }
+        await speakEncouragement('correct');
+      } catch (error) {
+        console.error('Error speaking encouragement:', error);
       }
+
+      // Record attempt and move to next word
+      const newAttempt: SpellingAttempt = {
+        word: wordToCheck,
+        userSpelling,
+        isCorrect: true,
+        attempts: attemptNumber
+      };
       
-      await speakEncouragement(isCorrect ? 'correct' : 'incorrect');
-    } catch (error) {
-      console.error('Error speaking encouragement:', error);
+      setAttempts(prev => [...prev, newAttempt]);
+      setWordsCompleted(prev => {
+        console.log('📊 Incrementing wordsCompleted from', prev, 'to', prev + 1);
+        return prev + 1;
+      });
+
+      // Update word statistics
+      try {
+        await updateWordStats(wordToCheck, true);
+      } catch (error) {
+        console.error('Error updating word stats:', error);
+      }
+
+      // Move to next word after delay
+      setTimeout(async () => {
+        setFeedback(null);
+        setIsSubmitting(false);
+        
+        console.log('🔍 Checking session end: wordsCompleted =', wordsCompleted, 'condition:', wordsCompleted + 1, '>=', 5, '=', wordsCompleted + 1 >= 5);
+        if (wordsCompleted + 1 >= 5) {
+          console.log('🏁 Ending session after', wordsCompleted + 1, 'words');
+          await endSession([...attempts, newAttempt]);
+        } else {
+          await fetchNextWord();
+        }
+      }, 2000);
+      
+      return;
     }
 
-    // Add to attempts
-    const newAttempt: SpellingAttempt = {
-      word: wordToCheck,
-      userSpelling,
-      isCorrect,
-      attempts: 1
-    };
-    
-    setAttempts(prev => [...prev, newAttempt]);
-    setWordsCompleted(prev => {
-      console.log('📊 Incrementing wordsCompleted from', prev, 'to', prev + 1);
-      return prev + 1;
-    });
+    // Handle incorrect answer
+    if (attemptNumber === 1) {
+      // First wrong attempt - show retry option
+      setUserFirstAttempt(userSpelling);
+      setFeedback({
+        show: true,
+        isCorrect: false,
+        message: '💪 Try again!'
+      });
 
-    // Update word statistics
-    try {
-      await updateWordStats(wordToCheck, isCorrect);
-    } catch (error) {
-      console.error('Error updating word stats:', error);
-    }
-
-    // Hide feedback and get next word after delay
-    setTimeout(async () => {
-      setFeedback(null);
-      setIsSubmitting(false);
-      
-      console.log('🔍 Checking session end: wordsCompleted =', wordsCompleted, 'condition:', wordsCompleted + 1, '>=', 5, '=', wordsCompleted + 1 >= 5);
-      if (wordsCompleted + 1 >= 5) {
-        console.log('🏁 Ending session after', wordsCompleted + 1, 'words');
-        // End session after 5 words
-        await endSession([...attempts, newAttempt]);
-      } else {
-        await fetchNextWord();
+      // Speak encouragement
+      try {
+        if (!speechInitializedRef.current) {
+          console.log('🔧 Initializing speech for mobile...');
+          await initializeSpeech();
+          speechInitializedRef.current = true;
+        }
+        await speakEncouragement('incorrect');
+      } catch (error) {
+        console.error('Error speaking encouragement:', error);
       }
-    }, 2000);
+
+      // Set retry mode after feedback delay
+      setTimeout(() => {
+        setFeedback(null);
+        setIsRetrying(true);
+        setIsSubmitting(false);
+      }, 2000);
+      
+    } else {
+      // Second wrong attempt - show final feedback and move on
+      setFeedback({
+        show: true,
+        isCorrect: false,
+        message: '📚 Let&apos;s learn this word!'
+      });
+
+      // Speak encouragement
+      try {
+        if (!speechInitializedRef.current) {
+          console.log('🔧 Initializing speech for mobile...');
+          await initializeSpeech();
+          speechInitializedRef.current = true;
+        }
+        await speakEncouragement('incorrect');
+      } catch (error) {
+        console.error('Error speaking encouragement:', error);
+      }
+
+      // Record the failed attempt
+      const newAttempt: SpellingAttempt = {
+        word: wordToCheck,
+        userSpelling: userFirstAttempt, // Use first attempt for recording
+        isCorrect: false,
+        attempts: 2
+      };
+      
+      setAttempts(prev => [...prev, newAttempt]);
+      setWordsCompleted(prev => {
+        console.log('📊 Incrementing wordsCompleted from', prev, 'to', prev + 1);
+        return prev + 1;
+      });
+
+      // Update word statistics
+      try {
+        await updateWordStats(wordToCheck, false);
+      } catch (error) {
+        console.error('Error updating word stats:', error);
+      }
+
+      // Auto-replay word and move to next after delay
+      setTimeout(async () => {
+        // Auto-replay the word before moving on
+        try {
+          console.log('🔊 Auto-replaying word:', wordToCheck);
+          await speakWord(wordToCheck);
+        } catch (error) {
+          console.error('Error auto-replaying word:', error);
+        }
+        
+        // Wait a bit after word replay, then move to next word
+        setTimeout(async () => {
+          setFeedback(null);
+          setIsSubmitting(false);
+          
+          console.log('🔍 Checking session end: wordsCompleted =', wordsCompleted, 'condition:', wordsCompleted + 1, '>=', 5, '=', wordsCompleted + 1 >= 5);
+          if (wordsCompleted + 1 >= 5) {
+            console.log('🏁 Ending session after', wordsCompleted + 1, 'words');
+            await endSession([...attempts, newAttempt]);
+          } else {
+            await fetchNextWord();
+          }
+        }, 1500); // Wait 1.5 seconds after word replay
+      }, 2000);
+    }
   };
 
   const endSession = async (finalAttempts: SpellingAttempt[]) => {
@@ -240,14 +349,35 @@ export default function PracticePage() {
                 }`}>
                   {feedback.message}
                 </div>
-                {!feedback.isCorrect && currentWord && (
+                {!feedback.isCorrect && currentWord && currentWordAttemptCount === 1 && (
                   <motion.div
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.5 }}
                     className="mt-4 p-4 bg-white rounded-cat shadow-cat"
                   >
-                    <p className="font-kid-friendly text-cat-gray">
+                    <p className="font-kid-friendly text-cat-gray text-center mb-2">
+                      You spelled: 
+                      <span className="font-bold text-cat-warning ml-2">
+                        {userFirstAttempt}
+                      </span>
+                    </p>
+                    <p className="font-kid-friendly text-cat-gray text-center">
+                      Correct spelling: 
+                      <span className="font-bold text-cat-dark ml-2">
+                        {checkedWord}
+                      </span>
+                    </p>
+                  </motion.div>
+                )}
+                {!feedback.isCorrect && currentWord && currentWordAttemptCount === 2 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5 }}
+                    className="mt-4 p-4 bg-white rounded-cat shadow-cat"
+                  >
+                    <p className="font-kid-friendly text-cat-gray text-center">
                       The correct spelling is: 
                       <span className="font-bold text-cat-dark ml-2">
                         {checkedWord}
@@ -255,6 +385,68 @@ export default function PracticePage() {
                     </p>
                   </motion.div>
                 )}
+              </motion.div>
+            ) : isRetrying && currentWord ? (
+              <motion.div
+                key="retry"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="bg-white rounded-cat-lg p-8 shadow-cat"
+              >
+                <div className="text-center mb-8">
+                  <h2 className="text-2xl font-kid-friendly font-bold text-cat-dark mb-4">
+                    🔄 Try Again!
+                  </h2>
+                  <p className="font-kid-friendly text-cat-gray">
+                    Listen carefully and try spelling the word again
+                  </p>
+                </div>
+
+                <TTSErrorBoundary word={currentWord.word}>
+                  <Suspense fallback={
+                    <div className="mb-8">
+                      <AudioLoadingSpinner word={currentWord.word} />
+                    </div>
+                  }>
+                    <WordPlayer 
+                      word={currentWord.word}
+                      autoPlay={true}
+                      className="mb-8"
+                    />
+                  </Suspense>
+                </TTSErrorBoundary>
+
+                {/* Show user's previous attempt */}
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-4 p-3 bg-cat-warning/10 border-2 border-cat-warning/30 rounded-cat"
+                >
+                  <p className="font-kid-friendly text-cat-gray text-center text-sm">
+                    You spelled:
+                  </p>
+                  <p className="font-kid-friendly text-cat-warning text-center text-lg font-bold">
+                    {userFirstAttempt}
+                  </p>
+                </motion.div>
+
+                <SpellingInput
+                  onSubmit={handleSpellingSubmit}
+                  disabled={isSubmitting}
+                  placeholder="Try spelling the word again..."
+                />
+
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 1 }}
+                  className="mt-6 p-4 bg-cat-cream rounded-cat border-2 border-cat-orange/30"
+                >
+                  <p className="font-kid-friendly text-cat-gray text-center text-sm">
+                    💡 Take your time and listen carefully to the word again.
+                  </p>
+                </motion.div>
               </motion.div>
             ) : currentWord ? (
               <motion.div

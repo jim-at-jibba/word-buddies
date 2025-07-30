@@ -151,9 +151,9 @@ export default function ParentsPage() {
                     <span className="text-white text-sm">✓</span>
                   </div>
                   <div>
-                    <h4 className="font-kid-friendly font-bold text-cat-dark">COPPA Compliant</h4>
+                    <h4 className="font-kid-friendly font-bold text-cat-dark">UK GDPR Compliant</h4>
                     <p className="font-kid-friendly text-cat-gray text-sm">
-                      Designed with children&apos;s privacy regulations in mind
+                      Follows UK data protection laws with no personal data collection
                     </p>
                   </div>
                 </div>

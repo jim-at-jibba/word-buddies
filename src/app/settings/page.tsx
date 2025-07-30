@@ -577,15 +577,43 @@ export default function SettingsPage() {
                 </Link>
                 */}
 
-                {/* Placeholder for future resources */}
-                <div className="p-6 border-2 border-dashed border-cat-light rounded-cat bg-cat-cream/50 flex items-center justify-center">
-                  <div className="text-center">
-                    <div className="text-4xl mb-3 opacity-50">🚀</div>
-                    <p className="font-kid-friendly text-cat-gray text-sm">
-                      More learning resources coming soon!
-                    </p>
-                  </div>
-                </div>
+                {/* Parents Information Link */}
+                <Link href="/parents">
+                  <motion.div
+                    className="p-6 border-2 border-cat-light hover:border-cat-orange rounded-cat bg-cat-cream hover:bg-cat-light transition-all duration-200 cursor-pointer h-full"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="flex items-start justify-between h-full">
+                      <div className="flex-1">
+                        <div className="text-3xl mb-3">👨‍👩‍👧‍👦</div>
+                        <h3 className="font-kid-friendly font-bold text-cat-dark text-lg mb-2">
+                          Information for Parents
+                        </h3>
+                        <p className="font-kid-friendly text-cat-gray text-sm">
+                          Learn about privacy, security, data safety, and why this app is safe for your child. 
+                          Understand ElevenLabs integration and iOS device compatibility.
+                        </p>
+                      </div>
+                      <svg
+                        width="20"
+                        height="20"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="text-cat-orange ml-4 flex-shrink-0"
+                      >
+                        <path
+                          d="M5 12h14m0 0l-7-7m7 7l-7 7"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                    </div>
+                  </motion.div>
+                </Link>
               </div>
             </div>
           </motion.div>

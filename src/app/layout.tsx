@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import SettingsIcon from "@/components/SettingsIcon";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,7 +17,14 @@ export default function RootLayout({
     <html lang="en">
       <body className="antialiased">
         <ErrorBoundary>
-          {children}
+          <div className="relative min-h-screen">
+            {/* Settings Icon - Fixed positioned in top-right */}
+            <div className="fixed top-4 right-4 z-50">
+              <SettingsIcon />
+            </div>
+            
+            {children}
+          </div>
         </ErrorBoundary>
       </body>
     </html>

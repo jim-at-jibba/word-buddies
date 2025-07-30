@@ -6,6 +6,7 @@ import Link from 'next/link';
 import CatMascot from '@/components/CatMascot';
 import { ProgressStats } from '@/types';
 import { getProgressStats } from '@/lib/client-spelling-logic';
+import { useUserName } from '@/hooks/useSettings';
 
 // Lazy load the ProgressTracker component
 const ProgressTracker = lazy(() => import('@/components/ProgressTracker'));
@@ -13,6 +14,7 @@ const ProgressTracker = lazy(() => import('@/components/ProgressTracker'));
 export default function Home() {
   const [progressStats, setProgressStats] = useState<ProgressStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const { name } = useUserName();
 
   useEffect(() => {
     fetchProgressStats();
@@ -51,6 +53,11 @@ export default function Home() {
           <h1 className="text-4xl md:text-6xl font-kid-friendly font-bold text-cat-dark mb-4">
             🐱 Word Buddies
           </h1>
+          {name ? (
+            <p className="text-lg md:text-xl font-kid-friendly text-cat-gray max-w-2xl mx-auto mb-2">
+              Welcome back, {name}! 🌟
+            </p>
+          ) : null}
           <p className="text-lg md:text-xl font-kid-friendly text-cat-gray max-w-2xl mx-auto">
             Learn spelling with our friendly cat! Perfect for Year 3 students (ages 7-8)
           </p>
@@ -70,7 +77,7 @@ export default function Home() {
               <CatMascot mood="happy" size="large" />
               
               <h2 className="text-2xl font-kid-friendly font-bold text-cat-dark mt-6 mb-4">
-                Ready to Practice Spelling?
+                {name ? `Ready to Practice, ${name}?` : "Ready to Practice Spelling?"}
               </h2>
               
               <p className="font-kid-friendly text-cat-gray mb-6">

@@ -349,7 +349,7 @@ export async function testApiKey(apiKey: string): Promise<{ valid: boolean; erro
             errorMessage = errorData.message;
           }
         }
-      } catch (parseError) {
+      } catch {
         console.log('❌ Could not parse error response');
         // Use status-based messages
         if (response.status === 401) errorMessage = 'Invalid API key';

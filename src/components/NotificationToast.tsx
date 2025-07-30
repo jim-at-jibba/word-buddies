@@ -75,9 +75,9 @@ export function NotificationToast({ notification, onDismiss }: NotificationToast
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: 100, scale: 0.8 }}
-      animate={{ opacity: 1, x: 0, scale: 1 }}
-      exit={{ opacity: 0, x: 100, scale: 0.8 }}
+      initial={{ opacity: 0, x: 100, y: 20, scale: 0.8 }}
+      animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+      exit={{ opacity: 0, x: 100, y: 20, scale: 0.8 }}
       transition={{ duration: 0.3, type: "spring", stiffness: 100 }}
       className={`${config.bgColor} border-2 ${config.borderColor} rounded-cat p-4 shadow-cat max-w-sm w-full`}
     >
@@ -127,7 +127,7 @@ interface NotificationContainerProps {
 
 export function NotificationContainer({ notifications, onDismiss }: NotificationContainerProps) {
   return (
-    <div className="fixed top-4 right-4 z-50 space-y-3 pointer-events-none">
+    <div className="fixed bottom-4 right-4 z-[60] space-y-3 pointer-events-none">
       <AnimatePresence>
         {notifications.map((notification) => (
           <div key={notification.id} className="pointer-events-auto">

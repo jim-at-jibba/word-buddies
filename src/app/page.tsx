@@ -76,7 +76,9 @@ export default function Home() {
               transition={{ duration: 0.6, delay: 0.2 }}
               className="bg-white rounded-cat-lg p-8 shadow-cat text-center"
             >
-              <CatMascot mood="happy" size="large" />
+              <div className="flex justify-center">
+                <CatMascot mood="happy" size="large" />
+              </div>
 
               <h2 className="text-2xl font-kid-friendly font-bold text-cat-dark mt-6 mb-4">
                 {name

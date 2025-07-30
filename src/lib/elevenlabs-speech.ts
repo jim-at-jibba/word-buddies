@@ -1,5 +1,6 @@
 // ElevenLabs Text-to-Speech service for reliable cross-platform audio
 import { logger } from './logger';
+import { retryElevenLabsCall, elevenLabsCircuitBreaker } from './retry-utils';
 
 interface ElevenLabsConfig {
   apiKey: string;
@@ -29,40 +30,84 @@ export function isElevenLabsAvailable(): boolean {
   return getElevenLabsConfig() !== null;
 }
 
-// Generate speech audio using ElevenLabs API
+// Generate speech audio using ElevenLabs API with retry logic
 async function generateSpeechAudio(text: string): Promise<string> {
   const config = getElevenLabsConfig();
   if (!config) {
     throw new Error('ElevenLabs not configured');
   }
 
-  const response = await fetch(`${config.apiUrl}/text-to-speech/${config.voiceId}`, {
-    method: 'POST',
-    headers: {
-      'Accept': 'audio/mpeg',
-      'Content-Type': 'application/json',
-      'xi-api-key': config.apiKey
-    },
-    body: JSON.stringify({
-      text: text,
-      model_id: 'eleven_monolingual_v1',
-      voice_settings: {
-        stability: 0.5,
-        similarity_boost: 0.8,
-        style: 0.0,
-        use_speaker_boost: true
+  return elevenLabsCircuitBreaker.execute(async () => {
+    return retryElevenLabsCall(async () => {
+      logger.debug(`Making ElevenLabs API call for: "${text}"`);
+      
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+      
+      try {
+        const response = await fetch(`${config.apiUrl}/text-to-speech/${config.voiceId}`, {
+          method: 'POST',
+          headers: {
+            'Accept': 'audio/mpeg',
+            'Content-Type': 'application/json',
+            'xi-api-key': config.apiKey
+          },
+          body: JSON.stringify({
+            text: text,
+            model_id: 'eleven_monolingual_v1',
+            voice_settings: {
+              stability: 0.5,
+              similarity_boost: 0.8,
+              style: 0.0,
+              use_speaker_boost: true
+            }
+          }),
+          signal: controller.signal
+        });
+
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          let errorMessage = `ElevenLabs API error: ${response.status} ${response.statusText}`;
+          
+          // Try to get more specific error info
+          try {
+            const errorData = await response.json();
+            if (errorData.detail) {
+              errorMessage += ` - ${errorData.detail}`;
+            }
+          } catch {
+            // Ignore JSON parsing errors
+          }
+          
+          throw new Error(errorMessage);
+        }
+
+        const audioBlob = await response.blob();
+        
+        // Validate that we received audio data
+        if (audioBlob.size === 0) {
+          throw new Error('Received empty audio blob from ElevenLabs');
+        }
+        
+        const audioUrl = URL.createObjectURL(audioBlob);
+        logger.debug(`Successfully generated audio for: "${text}" (${audioBlob.size} bytes)`);
+        
+        return audioUrl;
+      } catch (error) {
+        clearTimeout(timeoutId);
+        
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            throw new Error('ElevenLabs API request timeout');
+          }
+          throw error;
+        }
+        
+        throw new Error('Unknown error in ElevenLabs API call');
       }
-    })
+    }, `ElevenLabs speech generation for "${text}"`);
   });
-
-  if (!response.ok) {
-    throw new Error(`ElevenLabs API error: ${response.status} ${response.statusText}`);
-  }
-
-  const audioBlob = await response.blob();
-  const audioUrl = URL.createObjectURL(audioBlob);
-  
-  return audioUrl;
 }
 
 // Play audio from URL
@@ -130,21 +175,24 @@ export async function speakWithElevenLabs(text: string): Promise<void> {
   }
 }
 
-// Preload common words to improve performance
+// Preload common words to improve performance with retry logic
 export async function preloadCommonWords(words: string[]): Promise<void> {
   if (!isElevenLabsAvailable()) {
-    console.warn('ElevenLabs not available for preloading');
+    logger.warn('ElevenLabs not available for preloading');
     return;
   }
 
-  console.log('🔄 Preloading common words with ElevenLabs...');
+  logger.info('🔄 Preloading common words with ElevenLabs...');
   
-  // Preload in batches to avoid overwhelming the API
-  const batchSize = 5;
+  // Preload in smaller batches to be more API-friendly
+  const batchSize = 3;
+  let successCount = 0;
+  let errorCount = 0;
+  
   for (let i = 0; i < words.length; i += batchSize) {
     const batch = words.slice(i, i + batchSize);
     
-    await Promise.allSettled(
+    const results = await Promise.allSettled(
       batch.map(async (word) => {
         if (!audioCache.has(word)) {
           try {
@@ -160,21 +208,36 @@ export async function preloadCommonWords(words: string[]): Promise<void> {
               }
             }, 10 * 60 * 1000);
             
-            console.log('✅ Preloaded audio for:', word);
+            logger.debug('✅ Preloaded audio for:', word);
+            return word;
           } catch (error) {
-            console.warn('Failed to preload word:', word, error);
+            logger.warn('Failed to preload word:', word, error);
+            throw error;
           }
+        } else {
+          logger.debug('⏭️ Skipping cached word:', word);
+          return word;
         }
       })
     );
     
-    // Small delay between batches
+    // Count results
+    results.forEach((result, index) => {
+      if (result.status === 'fulfilled') {
+        successCount++;
+      } else {
+        errorCount++;
+        logger.error(`Failed to preload "${batch[index]}":`, result.reason);
+      }
+    });
+    
+    // Longer delay between batches to respect API rate limits
     if (i + batchSize < words.length) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      await new Promise(resolve => setTimeout(resolve, 2000));
     }
   }
   
-  console.log('🎉 Finished preloading common words');
+  logger.info(`🎉 Finished preloading: ${successCount} successful, ${errorCount} failed`);
 }
 
 // Clear audio cache (useful for memory management)

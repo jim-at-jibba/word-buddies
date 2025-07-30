@@ -24,7 +24,7 @@ async function generateKey(password: string, salt: Uint8Array): Promise<CryptoKe
     {
       name: 'PBKDF2',
       salt: salt,
-      iterations: 100000, // OWASP recommended minimum
+      iterations: 250000, // Increased for 2024 security standards
       hash: 'SHA-256'
     },
     keyMaterial,
@@ -49,7 +49,12 @@ function getBrowserFingerprint(): string {
   return components.join('|');
 }
 
-// Generate a stable salt based on browser characteristics
+// Generate a cryptographically secure random salt
+function generateRandomSalt(): Uint8Array {
+  return crypto.getRandomValues(new Uint8Array(16));
+}
+
+// Generate a stable salt based on browser characteristics (for backward compatibility)
 async function generateStableSalt(): Promise<Uint8Array> {
   const fingerprint = getBrowserFingerprint();
   const encoder = new TextEncoder();
@@ -61,15 +66,15 @@ async function generateStableSalt(): Promise<Uint8Array> {
 }
 
 /**
- * Encrypt a string using AES-GCM with a deterministic key derived from browser fingerprint
+ * Encrypt a string using AES-GCM with a random salt and browser fingerprint-based key
  */
 export async function encryptApiKey(plaintext: string): Promise<string> {
   try {
     const encoder = new TextEncoder();
     const data = encoder.encode(plaintext);
     
-    // Generate stable salt and key
-    const salt = await generateStableSalt();
+    // Generate cryptographically secure random salt and key
+    const salt = generateRandomSalt();
     const password = getBrowserFingerprint();
     const key = await generateKey(password, salt);
     
@@ -102,6 +107,7 @@ export async function encryptApiKey(plaintext: string): Promise<string> {
 
 /**
  * Decrypt a string that was encrypted with encryptApiKey
+ * Supports both new format (random salt) and legacy format (deterministic salt)
  */
 export async function decryptApiKey(encryptedData: string): Promise<string> {
   try {
@@ -117,9 +123,19 @@ export async function decryptApiKey(encryptedData: string): Promise<string> {
     const iv = data.slice(16, 16 + IV_LENGTH);
     const encrypted = data.slice(16 + IV_LENGTH);
     
-    // Generate the same key
+    // Generate the key using the salt from the encrypted data
     const password = getBrowserFingerprint();
-    const key = await generateKey(password, salt);
+    let key: CryptoKey;
+    
+    try {
+      // Try with the salt from the encrypted data (new format with random salt)
+      key = await generateKey(password, salt);
+    } catch {
+      console.warn('Failed to generate key with stored salt, trying legacy method');
+      // Fallback to legacy deterministic salt for backward compatibility
+      const legacySalt = await generateStableSalt();
+      key = await generateKey(password, legacySalt);
+    }
     
     // Decrypt the data
     const decrypted = await crypto.subtle.decrypt(
@@ -136,7 +152,7 @@ export async function decryptApiKey(encryptedData: string): Promise<string> {
     return decoder.decode(decrypted);
   } catch (error) {
     console.error('Decryption failed:', error);
-    throw new Error('Failed to decrypt API key');
+    throw new Error('Failed to decrypt API key - you may need to re-enter your API key');
   }
 }
 

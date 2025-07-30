@@ -1,4 +1,4 @@
-import { StoredWord, StoredSession, StoredWordAttempt } from './types';
+import { StoredWord, StoredSession, StoredWordAttempt, UserSettings } from './types';
 import { retryWithBackoff } from '../retry-utils';
 
 const DB_NAME = 'WordBuddiesDB';
@@ -49,6 +49,11 @@ class BrowserDB {
             const attemptsStore = db.createObjectStore('wordAttempts', { keyPath: 'id', autoIncrement: true });
             attemptsStore.createIndex('sessionId', 'sessionId', { unique: false });
             attemptsStore.createIndex('word', 'word', { unique: false });
+          }
+
+          // User settings store
+          if (!db.objectStoreNames.contains('userSettings')) {
+            db.createObjectStore('userSettings', { keyPath: 'id' });
           }
         };
         
@@ -286,6 +291,70 @@ class BrowserDB {
     });
   }
 
+  // User settings operations
+  async getUserSettings(): Promise<UserSettings> {
+    const db = await this.initDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['userSettings'], 'readonly');
+      const store = transaction.objectStore('userSettings');
+      const request = store.get('main');
+
+      request.onsuccess = () => {
+        const result = request.result;
+        if (result) {
+          resolve(result);
+        } else {
+          // Return default settings if none exist
+          const defaultSettings: UserSettings = {
+            version: 1,
+            lastUpdated: Date.now()
+          };
+          resolve(defaultSettings);
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async updateUserSettings(settings: Partial<UserSettings>): Promise<void> {
+    const db = await this.initDB();
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Get current settings first
+        const currentSettings = await this.getUserSettings();
+        
+        // Merge with new settings
+        const updatedSettings: UserSettings = {
+          ...currentSettings,
+          ...settings,
+          version: 1,
+          lastUpdated: Date.now()
+        };
+
+        const transaction = db.transaction(['userSettings'], 'readwrite');
+        const store = transaction.objectStore('userSettings');
+        const request = store.put({ ...updatedSettings, id: 'main' });
+
+        request.onsuccess = () => resolve();
+        request.onerror = () => reject(request.error);
+      } catch (error) {
+        reject(error);
+      }
+    });
+  }
+
+  async resetUserSettings(): Promise<void> {
+    const db = await this.initDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['userSettings'], 'readwrite');
+      const store = transaction.objectStore('userSettings');
+      const request = store.delete('main');
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   // Utility methods
   async countWords(filter?: (word: StoredWord) => boolean): Promise<number> {
     const words = await this.getAllWords();
@@ -295,10 +364,10 @@ class BrowserDB {
   async clearAllData(): Promise<void> {
     const db = await this.initDB();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['words', 'sessions', 'wordAttempts'], 'readwrite');
+      const transaction = db.transaction(['words', 'sessions', 'wordAttempts', 'userSettings'], 'readwrite');
       
       let completed = 0;
-      const total = 3;
+      const total = 4;
 
       const onComplete = () => {
         completed++;
@@ -308,6 +377,7 @@ class BrowserDB {
       transaction.objectStore('words').clear().onsuccess = onComplete;
       transaction.objectStore('sessions').clear().onsuccess = onComplete;
       transaction.objectStore('wordAttempts').clear().onsuccess = onComplete;
+      transaction.objectStore('userSettings').clear().onsuccess = onComplete;
       
       transaction.onerror = () => reject(transaction.error);
     });

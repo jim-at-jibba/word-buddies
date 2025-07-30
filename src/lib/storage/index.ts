@@ -1,5 +1,5 @@
 import { browserDB } from './browser-db';
-import { StoredWord } from './types';
+import { StoredWord, UserSettings } from './types';
 import { YEAR_3_WORDS } from '../data/words';
 
 let isInitialized = false;
@@ -32,6 +32,19 @@ export async function initializeBrowserStorage(): Promise<void> {
     console.error('Error initializing browser storage:', error);
     throw error;
   }
+}
+
+// Settings API
+export async function getUserSettings(): Promise<UserSettings> {
+  return browserDB.getUserSettings();
+}
+
+export async function updateUserSettings(settings: Partial<UserSettings>): Promise<void> {
+  return browserDB.updateUserSettings(settings);
+}
+
+export async function resetUserSettings(): Promise<void> {
+  return browserDB.resetUserSettings();
 }
 
 export { browserDB } from './browser-db';

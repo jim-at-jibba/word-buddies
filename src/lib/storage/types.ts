@@ -28,12 +28,22 @@ export interface StoredWordAttempt {
   createdAt: number; // timestamp
 }
 
-export interface BrowserStorageData {
-  words: StoredWord[];
-  sessions: StoredSession[];
-  wordAttempts: StoredWordAttempt[];
+export interface UserSettings {
+  name?: string;
+  // Future settings will be added here:
+  // yearGroup?: number;
+  // elevenLabsApiKey?: string;
   version: number;
   lastUpdated: number;
 }
 
-export type StorageKey = 'words' | 'sessions' | 'wordAttempts';
+export interface BrowserStorageData {
+  words: StoredWord[];
+  sessions: StoredSession[];
+  wordAttempts: StoredWordAttempt[];
+  userSettings?: UserSettings;
+  version: number;
+  lastUpdated: number;
+}
+
+export type StorageKey = 'words' | 'sessions' | 'wordAttempts' | 'userSettings';

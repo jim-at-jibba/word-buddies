@@ -1,5 +1,6 @@
 import { browserDB, initializeBrowserStorage, StoredWord, StoredSession, StoredWordAttempt } from './storage';
 import { PracticeWord, WordWithStats, SessionResult, ProgressStats } from '@/types';
+import { logger } from './logger';
 
 // Spaced repetition intervals (in days)
 const SPACED_REPETITION_INTERVALS = [1, 3, 7, 14, 30];
@@ -118,6 +119,67 @@ export async function updateWordStats(wordText: string, isCorrect: boolean): Pro
   }
 }
 
+export async function batchUpdateWordStats(
+  attempts: Array<{ word: string; isCorrect: boolean }>
+): Promise<void> {
+  try {
+    await ensureInitialized();
+    
+    // Get all words that need to be updated
+    const wordsToUpdate: StoredWord[] = [];
+    
+    for (const attempt of attempts) {
+      const word = await browserDB.getWordByText(attempt.word.toLowerCase());
+      if (!word) {
+        logger.error('Word not found:', attempt.word);
+        continue;
+      }
+
+      const newAttempts = word.attempts + 1;
+      const newCorrectAttempts = word.correctAttempts + (attempt.isCorrect ? 1 : 0);
+      const successRate = newCorrectAttempts / newAttempts;
+
+      // Calculate next review date using spaced repetition
+      let nextReview: number | undefined;
+      if (attempt.isCorrect) {
+        const intervalIndex = Math.min(word.correctAttempts, SPACED_REPETITION_INTERVALS.length - 1);
+        const interval = SPACED_REPETITION_INTERVALS[intervalIndex];
+        nextReview = Date.now() + (interval * 24 * 60 * 60 * 1000); // Convert days to milliseconds
+      } else {
+        // If incorrect, review again soon (2 hours)
+        nextReview = Date.now() + (2 * 60 * 60 * 1000);
+      }
+
+      // Update difficulty based on performance
+      let newDifficulty = word.difficulty;
+      if (successRate >= 0.8 && newAttempts >= 3) {
+        newDifficulty = Math.min(5, word.difficulty + 1);
+      } else if (successRate < 0.4 && newAttempts >= 3) {
+        newDifficulty = Math.max(1, word.difficulty - 1);
+      }
+
+      const updatedWord: StoredWord = {
+        ...word,
+        attempts: newAttempts,
+        correctAttempts: newCorrectAttempts,
+        lastAttempted: Date.now(),
+        nextReview,
+        difficulty: newDifficulty,
+      };
+
+      wordsToUpdate.push(updatedWord);
+    }
+
+    // Batch update all words in a single transaction
+    if (wordsToUpdate.length > 0) {
+      await browserDB.batchUpdateWords(wordsToUpdate);
+      logger.debug(`Batch updated ${wordsToUpdate.length} words in a single transaction`);
+    }
+  } catch (error) {
+    logger.error('Error batch updating word stats:', error);
+  }
+}
+
 export async function createSession(
   attempts: Array<{ word: string; userSpelling: string; isCorrect: boolean; attempts: number }>
 ): Promise<SessionResult> {
@@ -153,10 +215,8 @@ export async function createSession(
 
     await browserDB.insertWordAttempts(wordAttempts);
 
-    // Update word statistics
-    for (const attempt of attempts) {
-      await updateWordStats(attempt.word, attempt.isCorrect);
-    }
+    // Update word statistics using batch operation
+    await batchUpdateWordStats(attempts.map(a => ({ word: a.word, isCorrect: a.isCorrect })));
 
     // Determine celebration level
     let celebrationLevel: 'great' | 'good' | 'keep-trying';
@@ -280,6 +340,67 @@ export async function getWordsNeedingReview(): Promise<WordWithStats[]> {
   }
 }
 
+export async function calculateStreakDays(): Promise<number> {
+  try {
+    await ensureInitialized();
+    
+    // Get all sessions ordered by date (most recent first)
+    const allSessions = await browserDB.getRecentSessions(365); // Get up to a year of sessions
+    
+    if (allSessions.length === 0) {
+      return 0;
+    }
+
+    // Group sessions by calendar day (YYYY-MM-DD format)
+    const sessionsByDay = new Map<string, StoredSession[]>();
+    
+    for (const session of allSessions) {
+      const dateStr = new Date(session.date).toISOString().split('T')[0]; // YYYY-MM-DD
+      if (!sessionsByDay.has(dateStr)) {
+        sessionsByDay.set(dateStr, []);
+      }
+      sessionsByDay.get(dateStr)!.push(session);
+    }
+
+    // Get unique days sorted by date (most recent first)
+    const uniqueDays = Array.from(sessionsByDay.keys()).sort().reverse();
+    
+    if (uniqueDays.length === 0) {
+      return 0;
+    }
+
+    // Calculate streak starting from today
+    const today = new Date().toISOString().split('T')[0];
+    let streakDays = 0;
+    const currentDate = new Date();
+    
+    // Check each day backwards from today
+    for (let i = 0; i < 365; i++) { // Max streak of 365 days
+      const dateStr = currentDate.toISOString().split('T')[0];
+      
+      if (sessionsByDay.has(dateStr)) {
+        streakDays++;
+      } else {
+        // If today has no sessions, we might still be in a streak that ended yesterday
+        if (i === 0 && dateStr === today) {
+          // Skip today if no sessions, continue checking yesterday
+        } else {
+          // No session on this day, streak is broken
+          break;
+        }
+      }
+      
+      // Move to previous day
+      currentDate.setDate(currentDate.getDate() - 1);
+    }
+    
+    return streakDays;
+  } catch (error) {
+    logger.error('Error calculating streak days:', error);
+    return 0;
+  }
+}
+
 export async function getProgressStats(): Promise<ProgressStats> {
   try {
     await ensureInitialized();
@@ -308,16 +429,19 @@ export async function getProgressStats(): Promise<ProgressStats> {
       ? Math.round(recentSessions.reduce((sum, session) => sum + session.score, 0) / recentSessions.length)
       : 0;
 
+    // Calculate streak days
+    const streakDays = await calculateStreakDays();
+
     return {
       totalWordsLearned,
       averageScore,
-      streakDays: 0, // TODO: Calculate streak
+      streakDays,
       totalPracticeSessions: recentSessions.length,
       wordsNeedingReview,
       masteredWords,
     };
   } catch (error) {
-    console.error('Error getting progress stats:', error);
+    logger.error('Error getting progress stats:', error);
     return {
       totalWordsLearned: 0,
       averageScore: 0,

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { getRandomWord, updateWordStats, createSession, getProgressStats } from './client-spelling-logic';
+import { getRandomWord, updateWordStats, createSession, getProgressStats, calculateStreakDays } from './client-spelling-logic';
 
 // Mock the storage module
 vi.mock('./storage', () => ({
@@ -234,9 +234,88 @@ describe('client-spelling-logic', () => {
         masteredWords: 8,
         wordsNeedingReview: 2, // Only words with attempts > 0 and past due review
         averageScore: 80, // (80 + 90 + 70) / 3
-        streakDays: 0, // TODO: implement
+        streakDays: expect.any(Number), // Calculated by calculateStreakDays
         totalPracticeSessions: 3,
       });
+    });
+  });
+
+  describe('calculateStreakDays', () => {
+    it('should return 0 for no sessions', async () => {
+      const { browserDB } = await import('./storage');
+      
+      vi.mocked(browserDB.getRecentSessions).mockResolvedValue([]);
+
+      const streak = await calculateStreakDays();
+
+      expect(streak).toBe(0);
+    });
+
+    it('should calculate streak for consecutive days', async () => {
+      const { browserDB } = await import('./storage');
+      
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const twoDaysAgo = new Date(today);
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+      const mockSessions = [
+        { id: 's1', date: today.getTime(), wordsAttempted: 5, correctWords: 4, score: 80, duration: 120 },
+        { id: 's2', date: yesterday.getTime(), wordsAttempted: 5, correctWords: 5, score: 100, duration: 100 },
+        { id: 's3', date: twoDaysAgo.getTime(), wordsAttempted: 5, correctWords: 3, score: 60, duration: 150 },
+      ];
+
+      vi.mocked(browserDB.getRecentSessions).mockResolvedValue(mockSessions);
+
+      const streak = await calculateStreakDays();
+
+      expect(streak).toBe(3); // 3 consecutive days
+    });
+
+    it('should handle broken streak correctly', async () => {
+      const { browserDB } = await import('./storage');
+      
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const threeDaysAgo = new Date(today);
+      threeDaysAgo.setDate(threeDaysAgo.getDate() - 3);
+
+      const mockSessions = [
+        { id: 's1', date: today.getTime(), wordsAttempted: 5, correctWords: 4, score: 80, duration: 120 },
+        { id: 's2', date: yesterday.getTime(), wordsAttempted: 5, correctWords: 5, score: 100, duration: 100 },
+        // Gap of one day
+        { id: 's3', date: threeDaysAgo.getTime(), wordsAttempted: 5, correctWords: 3, score: 60, duration: 150 },
+      ];
+
+      vi.mocked(browserDB.getRecentSessions).mockResolvedValue(mockSessions);
+
+      const streak = await calculateStreakDays();
+
+      expect(streak).toBe(2); // Only today and yesterday count
+    });
+
+    it('should allow current streak to continue if no session today', async () => {
+      const { browserDB } = await import('./storage');
+      
+      const today = new Date();
+      const yesterday = new Date(today);
+      yesterday.setDate(yesterday.getDate() - 1);
+      const twoDaysAgo = new Date(today);
+      twoDaysAgo.setDate(twoDaysAgo.getDate() - 2);
+
+      const mockSessions = [
+        // No session today
+        { id: 's1', date: yesterday.getTime(), wordsAttempted: 5, correctWords: 5, score: 100, duration: 100 },
+        { id: 's2', date: twoDaysAgo.getTime(), wordsAttempted: 5, correctWords: 3, score: 60, duration: 150 },
+      ];
+
+      vi.mocked(browserDB.getRecentSessions).mockResolvedValue(mockSessions);
+
+      const streak = await calculateStreakDays();
+
+      expect(streak).toBe(2); // Yesterday and day before count
     });
   });
 });

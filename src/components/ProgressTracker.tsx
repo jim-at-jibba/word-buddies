@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { memo } from 'react';
 import { ProgressStats } from '@/types';
 
 interface ProgressTrackerProps {
@@ -8,13 +9,13 @@ interface ProgressTrackerProps {
   className?: string;
 }
 
-export default function ProgressTracker({ stats, className = '' }: ProgressTrackerProps) {
+const ProgressTracker = memo(function ProgressTracker({ stats, className = '' }: ProgressTrackerProps) {
   const {
     totalWordsLearned,
     averageScore,
-    masteredWords,
     wordsNeedingReview,
-    totalPracticeSessions
+    totalPracticeSessions,
+    streakDays
   } = stats;
 
   const progressItems = [
@@ -33,9 +34,9 @@ export default function ProgressTracker({ stats, className = '' }: ProgressTrack
       bgColor: "cat-success/20"
     },
     {
-      label: "Mastered Words",
-      value: masteredWords,
-      icon: "🏆",
+      label: "Streak Days",
+      value: streakDays,
+      icon: "🔥",
       color: "cat-warning",
       bgColor: "cat-warning/20"
     },
@@ -73,7 +74,7 @@ export default function ProgressTracker({ stats, className = '' }: ProgressTrack
             className={`rounded-cat p-4 text-center border-2 border-transparent transition-all duration-200 ${
               item.label === 'Words Learned' ? 'bg-cat-orange/20 hover:border-cat-orange' :
               item.label === 'Average Score' ? 'bg-cat-success/20 hover:border-cat-success' :
-              item.label === 'Mastered Words' ? 'bg-cat-warning/20 hover:border-cat-warning' :
+              item.label === 'Streak Days' ? 'bg-cat-warning/20 hover:border-cat-warning' :
               'bg-cat-error/20 hover:border-cat-error'
             }`}
           >
@@ -82,7 +83,7 @@ export default function ProgressTracker({ stats, className = '' }: ProgressTrack
             <div className={`text-2xl font-bold font-kid-friendly ${
               item.label === 'Words Learned' ? 'text-cat-orange' :
               item.label === 'Average Score' ? 'text-cat-success' :
-              item.label === 'Mastered Words' ? 'text-cat-warning' :
+              item.label === 'Streak Days' ? 'text-cat-warning' :
               'text-cat-error'
             }`}>
               {item.value}
@@ -141,4 +142,6 @@ export default function ProgressTracker({ stats, className = '' }: ProgressTrack
       </motion.div>
     </div>
   );
-}
+});
+
+export default ProgressTracker;

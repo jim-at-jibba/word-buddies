@@ -1,4 +1,5 @@
 import { StoredWord, StoredSession, StoredWordAttempt } from './types';
+import { retryWithBackoff } from '../retry-utils';
 
 const DB_NAME = 'WordBuddiesDB';
 const DB_VERSION = 1;
@@ -12,39 +13,57 @@ class BrowserDB {
       return this.db;
     }
 
-    return new Promise((resolve, reject) => {
-      const request = indexedDB.open(DB_NAME, DB_VERSION);
+    return retryWithBackoff(async () => {
+      return new Promise<IDBDatabase>((resolve, reject) => {
+        const request = indexedDB.open(DB_NAME, DB_VERSION);
 
-      request.onerror = () => reject(request.error);
-      request.onsuccess = () => {
-        this.db = request.result;
-        this.isInitialized = true;
-        resolve(this.db);
-      };
+        request.onerror = () => {
+          const error = new Error(`Failed to open IndexedDB: ${request.error?.message || 'Unknown error'}`);
+          reject(error);
+        };
+        
+        request.onsuccess = () => {
+          this.db = request.result;
+          this.isInitialized = true;
+          resolve(this.db);
+        };
 
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
+        request.onupgradeneeded = (event) => {
+          const db = (event.target as IDBOpenDBRequest).result;
 
-        // Words store
-        if (!db.objectStoreNames.contains('words')) {
-          const wordsStore = db.createObjectStore('words', { keyPath: 'id', autoIncrement: true });
-          wordsStore.createIndex('word', 'word', { unique: true });
-          wordsStore.createIndex('nextReview', 'nextReview', { unique: false });
-        }
+          // Words store
+          if (!db.objectStoreNames.contains('words')) {
+            const wordsStore = db.createObjectStore('words', { keyPath: 'id', autoIncrement: true });
+            wordsStore.createIndex('word', 'word', { unique: true });
+            wordsStore.createIndex('nextReview', 'nextReview', { unique: false });
+          }
 
-        // Sessions store
-        if (!db.objectStoreNames.contains('sessions')) {
-          const sessionsStore = db.createObjectStore('sessions', { keyPath: 'id' });
-          sessionsStore.createIndex('date', 'date', { unique: false });
-        }
+          // Sessions store
+          if (!db.objectStoreNames.contains('sessions')) {
+            const sessionsStore = db.createObjectStore('sessions', { keyPath: 'id' });
+            sessionsStore.createIndex('date', 'date', { unique: false });
+          }
 
-        // Word attempts store
-        if (!db.objectStoreNames.contains('wordAttempts')) {
-          const attemptsStore = db.createObjectStore('wordAttempts', { keyPath: 'id', autoIncrement: true });
-          attemptsStore.createIndex('sessionId', 'sessionId', { unique: false });
-          attemptsStore.createIndex('word', 'word', { unique: false });
-        }
-      };
+          // Word attempts store
+          if (!db.objectStoreNames.contains('wordAttempts')) {
+            const attemptsStore = db.createObjectStore('wordAttempts', { keyPath: 'id', autoIncrement: true });
+            attemptsStore.createIndex('sessionId', 'sessionId', { unique: false });
+            attemptsStore.createIndex('word', 'word', { unique: false });
+          }
+        };
+        
+        request.onblocked = () => {
+          reject(new Error('IndexedDB upgrade blocked - please close other tabs'));
+        };
+      });
+    }, {
+      maxAttempts: 3,
+      initialDelay: 500,
+      shouldRetry: (error: Error) => {
+        // Retry on transient errors, but not on quota or upgrade issues
+        const message = error.message.toLowerCase();
+        return !message.includes('quota') && !message.includes('blocked') && !message.includes('upgrade');
+      }
     });
   }
 
@@ -108,6 +127,31 @@ class BrowserDB {
 
       request.onsuccess = () => resolve();
       request.onerror = () => reject(request.error);
+    });
+  }
+
+  async batchUpdateWords(words: StoredWord[]): Promise<void> {
+    const db = await this.initDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['words'], 'readwrite');
+      const store = transaction.objectStore('words');
+
+      let completed = 0;
+      const total = words.length;
+
+      if (total === 0) {
+        resolve();
+        return;
+      }
+
+      words.forEach(word => {
+        const request = store.put(word);
+        request.onsuccess = () => {
+          completed++;
+          if (completed === total) resolve();
+        };
+        request.onerror = () => reject(request.error);
+      });
     });
   }
 

@@ -7,6 +7,8 @@ import Link from "next/link";
 import CatMascot from "@/components/CatMascot";
 import { useSettings } from "@/hooks/useSettings";
 import { YEAR_3_WORDS } from "@/lib/data/words";
+import { testApiKey } from "@/lib/elevenlabs-speech";
+import { encryptApiKey, validateApiKeyFormat, isEncryptionSupported } from "@/lib/encryption";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -15,12 +17,22 @@ export default function SettingsPage() {
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  
+  // ElevenLabs API key state
+  const [apiKey, setApiKey] = useState("");
+  const [hasApiKey, setHasApiKey] = useState(false);
+  const [apiKeyTesting, setApiKeyTesting] = useState(false);
+  const [apiKeyTestResult, setApiKeyTestResult] = useState<{ valid: boolean; error?: string } | null>(null);
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
 
-  // Load current name when settings are loaded
+  // Load current settings when loaded
   useEffect(() => {
     if (settings?.name) {
       setName(settings.name);
     }
+    
+    // Check if user has an API key configured
+    setHasApiKey(!!settings?.elevenLabsApiKey);
   }, [settings]);
 
   const handleSave = async () => {
@@ -46,6 +58,89 @@ export default function SettingsPage() {
 
   const handleBackClick = () => {
     router.back();
+  };
+
+  const handleTestApiKey = async () => {
+    if (!apiKey.trim()) return;
+    
+    setApiKeyTesting(true);
+    setApiKeyTestResult(null);
+    
+    try {
+      const result = await testApiKey(apiKey.trim());
+      console.log('API key test result:', result); // Debug log
+      setApiKeyTestResult(result);
+    } catch (error) {
+      console.error('API key test error:', error); // Debug log
+      setApiKeyTestResult({ 
+        valid: false, 
+        error: error instanceof Error ? error.message : 'Failed to test API key'
+      });
+    } finally {
+      setApiKeyTesting(false);
+    }
+  };
+
+  const handleSaveApiKey = async () => {
+    if (!apiKey.trim()) {
+      setSaveError('Please enter an API key');
+      return;
+    }
+
+    if (!validateApiKeyFormat(apiKey.trim())) {
+      setSaveError('Invalid API key format (should start with "sk_")');
+      return;
+    }
+
+    if (!isEncryptionSupported()) {
+      setSaveError('Encryption not supported in this browser');
+      return;
+    }
+
+    setSaving(true);
+    setSaveError(null);
+    
+    try {
+      // Encrypt the API key
+      const encryptedApiKey = await encryptApiKey(apiKey.trim());
+      
+      // Save to settings
+      await updateSettings({ elevenLabsApiKey: encryptedApiKey });
+      
+      setHasApiKey(true);
+      setShowApiKeyInput(false);
+      setApiKey('');
+      setSaveSuccess(true);
+      
+      // Hide success message after 2 seconds
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (error) {
+      console.error('Error saving API key:', error);
+      setSaveError('Failed to save API key. Please try again.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleRemoveApiKey = async () => {
+    setSaving(true);
+    setSaveError(null);
+    
+    try {
+      await updateSettings({ elevenLabsApiKey: undefined });
+      setHasApiKey(false);
+      setApiKey('');
+      setApiKeyTestResult(null);
+      setSaveSuccess(true);
+      
+      // Hide success message after 2 seconds
+      setTimeout(() => setSaveSuccess(false), 2000);
+    } catch (error) {
+      console.error('Error removing API key:', error);
+      setSaveError('Failed to remove API key. Please try again.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   if (loading) {
@@ -103,12 +198,37 @@ export default function SettingsPage() {
 
         {/* Main Content */}
         <div className="max-w-2xl mx-auto">
-          <div className="grid md:grid-cols-2 gap-8 items-start">
+          <div className="space-y-8">
+            {/* Cat Mascot */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.2 }}
+              className="flex flex-col items-center text-center"
+            >
+              <CatMascot mood="happy" size="large" />
+
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, delay: 0.4 }}
+                className="mt-6"
+              >
+                <h3 className="text-xl font-kid-friendly font-bold text-cat-dark mb-3">
+                  Let&apos;s personalize your experience!
+                </h3>
+                <p className="font-kid-friendly text-cat-gray">
+                  Tell me your name so I can cheer you on during spelling
+                  practice! You can always change it later.
+                </p>
+              </motion.div>
+            </motion.div>
+
             {/* Settings Form */}
             <motion.div
-              initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6, delay: 0.6 }}
               className="bg-white rounded-cat-lg p-8 shadow-cat"
             >
               <h2 className="text-2xl font-kid-friendly font-bold text-cat-dark mb-6">
@@ -160,6 +280,152 @@ export default function SettingsPage() {
                 />
                 <p className="font-kid-friendly text-cat-gray text-sm mt-2">
                   This will be used to personalize your experience!
+                </p>
+              </div>
+
+              {/* ElevenLabs API Key Section */}
+              <div className="mb-6">
+                <label className="block font-kid-friendly font-bold text-cat-dark mb-3">
+                  🔊 ElevenLabs API Key
+                </label>
+                
+                {hasApiKey ? (
+                  // Show when user has API key configured
+                  <div className="space-y-3">
+                    <div className="p-4 bg-cat-success/10 border-2 border-cat-success/30 rounded-cat">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-kid-friendly text-cat-success font-bold">
+                            ✅ ElevenLabs Configured
+                          </p>
+                          <p className="font-kid-friendly text-cat-gray text-sm">
+                            Premium voice quality is active
+                          </p>
+                        </div>
+                        <motion.button
+                          onClick={handleRemoveApiKey}
+                          disabled={saving}
+                          className="text-cat-error hover:text-cat-error/80 font-kid-friendly text-sm underline"
+                          whileHover={{ scale: 1.05 }}
+                        >
+                          Remove
+                        </motion.button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Show when no API key configured
+                  <div className="space-y-3">
+                    {!showApiKeyInput ? (
+                      <div className="p-4 bg-cat-cream border-2 border-cat-light rounded-cat">
+                        <p className="font-kid-friendly text-cat-gray text-sm mb-3">
+                          Add your ElevenLabs API key for premium voice quality. Without it, the app will use your browser&apos;s built-in voices.
+                        </p>
+                        <motion.button
+                          onClick={() => setShowApiKeyInput(true)}
+                          className="cat-button text-sm px-4 py-2"
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                        >
+                          Add API Key
+                        </motion.button>
+                      </div>
+                    ) : (
+                      // API key input form
+                      <div className="space-y-4">
+                        <div>
+                          <input
+                            type="password"
+                            value={apiKey}
+                            onChange={(e) => {
+                              setApiKey(e.target.value);
+                              setApiKeyTestResult(null);
+                            }}
+                            placeholder="Enter your ElevenLabs API key..."
+                            className="w-full p-4 border-2 border-cat-light rounded-cat font-kid-friendly text-lg focus:border-cat-orange focus:outline-none transition-colors duration-200"
+                            maxLength={100}
+                          />
+                          
+                          {/* Test Result Display */}
+                          {apiKeyTestResult && (
+                            <motion.div
+                              initial={{ opacity: 0, y: -10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              className={`mt-2 p-3 rounded-cat ${
+                                apiKeyTestResult.valid
+                                  ? 'bg-cat-success/10 border border-cat-success/20'
+                                  : 'bg-cat-error/10 border border-cat-error/20'
+                              }`}
+                            >
+                              <p className={`font-kid-friendly text-sm ${
+                                apiKeyTestResult.valid ? 'text-cat-success' : 'text-cat-error'
+                              }`}>
+                                {apiKeyTestResult.valid 
+                                  ? '✅ API key is valid!' 
+                                  : `❌ ${apiKeyTestResult.error || 'Unknown error occurred'}`
+                                }
+                              </p>
+                            </motion.div>
+                          )}
+                        </div>
+                        
+                        {/* Action buttons */}
+                        <div className="flex space-x-3">
+                          <motion.button
+                            onClick={handleTestApiKey}
+                            disabled={!apiKey.trim() || apiKeyTesting}
+                            className={`flex-1 border-2 border-cat-orange text-cat-orange font-kid-friendly font-bold py-3 px-4 rounded-cat transition-colors duration-200 ${
+                              !apiKey.trim() || apiKeyTesting
+                                ? 'opacity-50 cursor-not-allowed'
+                                : 'hover:bg-cat-orange hover:text-white'
+                            }`}
+                            whileHover={apiKey.trim() && !apiKeyTesting ? { scale: 1.02 } : {}}
+                            whileTap={apiKey.trim() && !apiKeyTesting ? { scale: 0.98 } : {}}
+                          >
+                            {apiKeyTesting ? 'Testing...' : 'Test Key'}
+                          </motion.button>
+                          
+                          <motion.button
+                            onClick={handleSaveApiKey}
+                            disabled={!apiKey.trim() || saving || (apiKeyTestResult ? !apiKeyTestResult.valid : false)}
+                            className={`flex-1 cat-button py-3 px-4 ${
+                              !apiKey.trim() || saving || (apiKeyTestResult && !apiKeyTestResult.valid)
+                                ? 'opacity-50 cursor-not-allowed'
+                                : ''
+                            }`}
+                            whileHover={apiKey.trim() && !saving && (apiKeyTestResult ? apiKeyTestResult.valid : true) ? { scale: 1.02 } : {}}
+                            whileTap={apiKey.trim() && !saving && (apiKeyTestResult ? apiKeyTestResult.valid : true) ? { scale: 0.98 } : {}}
+                          >
+                            {saving ? 'Saving...' : 'Save Key'}
+                          </motion.button>
+                          
+                          <motion.button
+                            onClick={() => {
+                              setShowApiKeyInput(false);
+                              setApiKey('');
+                              setApiKeyTestResult(null);
+                            }}
+                            className="text-cat-gray hover:text-cat-dark font-kid-friendly text-sm underline py-3 px-2"
+                            whileHover={{ scale: 1.05 }}
+                          >
+                            Cancel
+                          </motion.button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                
+                <p className="font-kid-friendly text-cat-gray text-sm mt-2">
+                  Get your free API key at{' '}
+                  <a
+                    href="https://elevenlabs.io"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-cat-orange hover:text-cat-dark transition-colors duration-200 underline"
+                  >
+                    elevenlabs.io
+                  </a>
                 </p>
               </div>
 
@@ -221,31 +487,6 @@ export default function SettingsPage() {
                   )}
                 </span>
               </motion.button>
-            </motion.div>
-
-            {/* Cat Mascot */}
-            <motion.div
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.4 }}
-              className="text-center"
-            >
-              <CatMascot mood="happy" size="large" />
-
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.6, delay: 0.6 }}
-                className="mt-6"
-              >
-                <h3 className="text-xl font-kid-friendly font-bold text-cat-dark mb-3">
-                  Let&apos;s personalize your experience!
-                </h3>
-                <p className="font-kid-friendly text-cat-gray">
-                  Tell me your name so I can cheer you on during spelling
-                  practice! You can always change it later.
-                </p>
-              </motion.div>
             </motion.div>
           </div>
 

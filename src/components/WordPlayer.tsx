@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, memo } from 'react';
 import { motion } from 'framer-motion';
 import { speakWord, isSpeechSupported, initializeSpeech } from '@/lib/speech';
 import CatMascot from './CatMascot';
@@ -12,7 +12,7 @@ interface WordPlayerProps {
   className?: string;
 }
 
-export default function WordPlayer({ 
+const WordPlayer = memo(function WordPlayer({ 
   word, 
   autoPlay = false, 
   onPlayComplete,
@@ -150,4 +150,6 @@ export default function WordPlayer({
       )}
     </div>
   );
-}
+});
+
+export default WordPlayer;

@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { memo } from 'react';
 
 interface CatMascotProps {
   mood?: 'happy' | 'excited' | 'encouraging' | 'thinking';
@@ -9,7 +10,7 @@ interface CatMascotProps {
   className?: string;
 }
 
-export default function CatMascot({ 
+const CatMascot = memo(function CatMascot({ 
   mood = 'happy', 
   size = 'medium', 
   onClick,
@@ -198,4 +199,6 @@ export default function CatMascot({
       {renderCat()}
     </motion.div>
   );
-}
+});
+
+export default CatMascot;

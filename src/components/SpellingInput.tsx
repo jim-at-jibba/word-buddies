@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, memo } from 'react';
 import { motion } from 'framer-motion';
 
 interface SpellingInputProps {
@@ -11,7 +11,7 @@ interface SpellingInputProps {
   className?: string;
 }
 
-export default function SpellingInput({
+const SpellingInput = memo(function SpellingInput({
   onSubmit,
   disabled = false,
   placeholder = "Type the word here...",
@@ -131,4 +131,6 @@ export default function SpellingInput({
       )}
     </div>
   );
-}
+});
+
+export default SpellingInput;

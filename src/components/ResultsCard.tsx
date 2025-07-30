@@ -1,6 +1,7 @@
 'use client';
 
 import { motion } from 'framer-motion';
+import { memo } from 'react';
 import { SpellingAttempt } from '@/types';
 
 interface ResultsCardProps {
@@ -8,7 +9,7 @@ interface ResultsCardProps {
   index: number;
 }
 
-export default function ResultsCard({ attempt, index }: ResultsCardProps) {
+const ResultsCard = memo(function ResultsCard({ attempt, index }: ResultsCardProps) {
   const { word, userSpelling, isCorrect } = attempt;
 
   return (
@@ -87,4 +88,6 @@ export default function ResultsCard({ attempt, index }: ResultsCardProps) {
       </div>
     </motion.div>
   );
-}
+});
+
+export default ResultsCard;

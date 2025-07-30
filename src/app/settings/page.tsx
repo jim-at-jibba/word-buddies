@@ -239,7 +239,7 @@ export default function SettingsPage() {
                 className="mt-6"
               >
                 <h3 className="text-xl font-kid-friendly font-bold text-cat-dark mb-3">
-                  Let's personalize your experience!
+                  Let&apos;s personalize your experience!
                 </h3>
                 <p className="font-kid-friendly text-cat-gray">
                   Tell me your name so I can cheer you on during spelling
@@ -353,4 +353,3 @@ export default function SettingsPage() {
     </div>
   );
 }
-

@@ -1,19 +1,27 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import WordPlayer from '@/components/WordPlayer';
 import SpellingInput from '@/components/SpellingInput';
 import CatMascot from '@/components/CatMascot';
+import TTSErrorBoundary from '@/components/TTSErrorBoundary';
+import { NotificationContainer } from '@/components/NotificationToast';
+import { AudioLoadingSpinner } from '@/components/LoadingSpinner';
+import OfflineIndicator from '@/components/OfflineIndicator';
+import { useNotifications } from '@/hooks/useNotifications';
 import { PracticeWord, SpellingAttempt } from '@/types';
 import { checkSpelling } from '@/lib/client-utils';
 import { speakEncouragement, initializeSpeech } from '@/lib/speech';
 import { getRandomWord, updateWordStats, createSession, updateSessionDuration } from '@/lib/client-spelling-logic';
 import { logger } from '@/lib/logger';
 
+// Lazy load the WordPlayer component
+const WordPlayer = lazy(() => import('@/components/WordPlayer'));
+
 export default function PracticePage() {
   const router = useRouter();
+  const notifications = useNotifications();
   const [currentWord, setCurrentWord] = useState<PracticeWord | null>(null);
   
   // Debug: Log when component renders and what currentWord is
@@ -43,10 +51,18 @@ export default function PracticePage() {
       logger.debug('Setting currentWord to:', word.word);
     } catch (error) {
       logger.error('Error fetching word:', error);
+      notifications.notifyError(
+        'Unable to Load Word',
+        'There was a problem loading the next word. Please try again.',
+        {
+          label: 'Retry',
+          onClick: fetchNextWord
+        }
+      );
     } finally {
       setIsLoading(false);
     }
-  }, [currentWord]);
+  }, [currentWord, notifications]);
 
   useEffect(() => {
     if (!hasInitializedRef.current) {
@@ -257,11 +273,19 @@ export default function PracticePage() {
                   </p>
                 </div>
 
-                <WordPlayer 
-                  word={currentWord.word}
-                  autoPlay={true}
-                  className="mb-8"
-                />
+                <TTSErrorBoundary word={currentWord.word}>
+                  <Suspense fallback={
+                    <div className="mb-8">
+                      <AudioLoadingSpinner word={currentWord.word} />
+                    </div>
+                  }>
+                    <WordPlayer 
+                      word={currentWord.word}
+                      autoPlay={true}
+                      className="mb-8"
+                    />
+                  </Suspense>
+                </TTSErrorBoundary>
 
                 <SpellingInput
                   onSubmit={handleSpellingSubmit}
@@ -299,6 +323,15 @@ export default function PracticePage() {
           </AnimatePresence>
         </div>
       </div>
+      
+      {/* Notifications */}
+      <NotificationContainer 
+        notifications={notifications.notifications}
+        onDismiss={notifications.dismissNotification}
+      />
+      
+      {/* Offline Indicator */}
+      <OfflineIndicator />
     </div>
   );
 }

@@ -1,15 +1,17 @@
 'use client';
 
-import { useState, useEffect, Suspense, useCallback } from 'react';
+import { useState, useEffect, Suspense, useCallback, lazy } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import CatMascot from '@/components/CatMascot';
-import ResultsCard from '@/components/ResultsCard';
 import { SessionResult } from '@/types';
 import { speakEncouragement, initializeSpeech } from '@/lib/speech';
 import { getSessionById } from '@/lib/client-spelling-logic';
 import { logger } from '@/lib/logger';
+
+// Lazy load the ResultsCard component
+const ResultsCard = lazy(() => import('@/components/ResultsCard'));
 
 function ResultsPageContent() {
   const router = useRouter();
@@ -245,11 +247,23 @@ function ResultsPageContent() {
           
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
             {sessionResult.attempts.map((attempt, index) => (
-              <ResultsCard 
+              <Suspense 
                 key={`${attempt.word}-${index}`}
-                attempt={attempt} 
-                index={index} 
-              />
+                fallback={
+                  <div className="p-4 rounded-cat border-2 border-cat-gray/20 bg-cat-gray/10 animate-pulse">
+                    <div className="text-center space-y-2">
+                      <div className="w-8 h-8 bg-cat-gray/20 rounded-full mx-auto"></div>
+                      <div className="h-4 bg-cat-gray/20 rounded mx-auto w-16"></div>
+                      <div className="h-3 bg-cat-gray/20 rounded mx-auto w-24"></div>
+                    </div>
+                  </div>
+                }
+              >
+                <ResultsCard 
+                  attempt={attempt} 
+                  index={index} 
+                />
+              </Suspense>
             ))}
           </div>
         </motion.div>

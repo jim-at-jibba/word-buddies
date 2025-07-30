@@ -1,12 +1,14 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import CatMascot from '@/components/CatMascot';
-import ProgressTracker from '@/components/ProgressTracker';
 import { ProgressStats } from '@/types';
 import { getProgressStats } from '@/lib/client-spelling-logic';
+
+// Lazy load the ProgressTracker component
+const ProgressTracker = lazy(() => import('@/components/ProgressTracker'));
 
 export default function Home() {
   const [progressStats, setProgressStats] = useState<ProgressStats | null>(null);
@@ -106,7 +108,18 @@ export default function Home() {
                   <p className="font-kid-friendly text-cat-gray">Loading your progress...</p>
                 </div>
               ) : progressStats ? (
-                <ProgressTracker stats={progressStats} />
+                <Suspense fallback={
+                  <div className="bg-white rounded-cat-lg p-8 shadow-cat text-center">
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-6 h-6 border-2 border-cat-orange border-t-transparent rounded-full mx-auto mb-4"
+                    />
+                    <p className="font-kid-friendly text-cat-gray">Loading progress...</p>
+                  </div>
+                }>
+                  <ProgressTracker stats={progressStats} />
+                </Suspense>
               ) : (
                 <div className="bg-white rounded-cat-lg p-8 shadow-cat text-center">
                   <p className="font-kid-friendly text-cat-gray">

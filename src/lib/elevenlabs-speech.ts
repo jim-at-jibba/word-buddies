@@ -1,6 +1,8 @@
 // ElevenLabs Text-to-Speech service for reliable cross-platform audio
 import { logger } from './logger';
 import { retryElevenLabsCall, elevenLabsCircuitBreaker } from './retry-utils';
+import { getUserSettings } from './storage';
+import { decryptApiKey, isEncryptionSupported, clearApiKeyFromMemory, validateApiKeyFormat } from './encryption';
 
 interface ElevenLabsConfig {
   apiKey: string;
@@ -11,28 +13,57 @@ interface ElevenLabsConfig {
 // Audio cache for repeated words
 const audioCache = new Map<string, string>(); // text -> blob URL
 
-// Configuration
-function getElevenLabsConfig(): ElevenLabsConfig | null {
-  const apiKey = process.env.NEXT_PUBLIC_ELEVENLABS_API_KEY;
-  const voiceId = process.env.NEXT_PUBLIC_ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM'; // Rachel voice
-  const apiUrl = process.env.NEXT_PUBLIC_ELEVENLABS_API_URL || 'https://api.elevenlabs.io/v1';
+// Configuration - now uses user-provided API keys only
+async function getElevenLabsConfig(): Promise<ElevenLabsConfig | null> {
+  try {
+    // Get user settings
+    const settings = await getUserSettings();
+    
+    if (!settings.elevenLabsApiKey) {
+      logger.debug('No user ElevenLabs API key configured - will use browser TTS fallback');
+      return null;
+    }
 
-  if (!apiKey || apiKey === 'your_elevenlabs_api_key_here') {
-    logger.warn('ElevenLabs API key not configured');
+    // Check if encryption is supported
+    if (!isEncryptionSupported()) {
+      logger.warn('Encryption not supported in this browser - cannot decrypt API key');
+      return null;
+    }
+
+    // Decrypt the user's API key
+    let apiKey: string;
+    try {
+      apiKey = await decryptApiKey(settings.elevenLabsApiKey);
+    } catch (error) {
+      logger.error('Failed to decrypt user API key:', error);
+      return null;
+    }
+
+    // Default voice and API URL (can be made configurable later)
+    const voiceId = '21m00Tcm4TlvDq8ikWAM'; // Rachel voice - clear and child-friendly
+    const apiUrl = 'https://api.elevenlabs.io/v1';
+
+    const config = { apiKey, voiceId, apiUrl };
+    
+    // Clear the decrypted key from memory after a short delay
+    setTimeout(() => clearApiKeyFromMemory(apiKey), 1000);
+    
+    return config;
+  } catch (error) {
+    logger.error('Error getting ElevenLabs configuration:', error);
     return null;
   }
-
-  return { apiKey, voiceId, apiUrl };
 }
 
 // Check if ElevenLabs is available and configured
-export function isElevenLabsAvailable(): boolean {
-  return getElevenLabsConfig() !== null;
+export async function isElevenLabsAvailable(): Promise<boolean> {
+  const config = await getElevenLabsConfig();
+  return config !== null;
 }
 
 // Generate speech audio using ElevenLabs API with retry logic
 async function generateSpeechAudio(text: string): Promise<string> {
-  const config = getElevenLabsConfig();
+  const config = await getElevenLabsConfig();
   if (!config) {
     throw new Error('ElevenLabs not configured');
   }
@@ -177,7 +208,7 @@ export async function speakWithElevenLabs(text: string): Promise<void> {
 
 // Preload common words to improve performance with retry logic
 export async function preloadCommonWords(words: string[]): Promise<void> {
-  if (!isElevenLabsAvailable()) {
+  if (!(await isElevenLabsAvailable())) {
     logger.warn('ElevenLabs not available for preloading');
     return;
   }
@@ -257,4 +288,98 @@ export function getAudioCacheStats(): { size: number; words: string[] } {
     size: audioCache.size,
     words: Array.from(audioCache.keys())
   };
+}
+
+// Test if an API key is valid by making a simple request
+export async function testApiKey(apiKey: string): Promise<{ valid: boolean; error?: string }> {
+  console.log('🔍 Testing API key...');
+  
+  // First do basic format validation
+  if (!validateApiKeyFormat(apiKey)) {
+    return {
+      valid: false,
+      error: 'Invalid API key format (should start with "sk_" followed by 40-60 characters)'
+    };
+  }
+  
+  try {
+    const apiUrl = 'https://api.elevenlabs.io/v1';
+    
+    // Try making a simple request - ElevenLabs may block CORS so this might not work in browser
+    console.log('📡 Making request to ElevenLabs API...');
+    
+    // Set up request with CORS handling
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 8000); // 8 second timeout
+    
+    const response = await fetch(`${apiUrl}/user`, {
+      method: 'GET',
+      headers: {
+        'Accept': 'application/json',
+        'xi-api-key': apiKey
+      },
+      signal: controller.signal,
+      mode: 'cors'
+    });
+    
+    clearTimeout(timeoutId);
+    console.log('📡 Response status:', response.status, response.statusText);
+
+    if (response.ok) {
+      const userData = await response.json();
+      console.log('✅ API key validation successful:', userData);
+      return { valid: true };
+    } else {
+      console.log('❌ API key validation failed with status:', response.status);
+      
+      let errorMessage = 'Invalid API key';
+      
+      // Try to get more specific error info
+      try {
+        const errorText = await response.text();
+        console.log('📄 Error response text:', errorText);
+        
+        if (errorText) {
+          const errorData = JSON.parse(errorText);
+          if (errorData.detail) {
+            errorMessage = typeof errorData.detail === 'string' 
+              ? errorData.detail 
+              : errorData.detail.message || errorMessage;
+          } else if (errorData.message) {
+            errorMessage = errorData.message;
+          }
+        }
+      } catch (parseError) {
+        console.log('❌ Could not parse error response');
+        // Use status-based messages
+        if (response.status === 401) errorMessage = 'Invalid API key';
+        else if (response.status === 403) errorMessage = 'API key access denied';
+        else if (response.status === 429) errorMessage = 'Rate limit exceeded';
+      }
+      
+      return { valid: false, error: errorMessage };
+    }
+  } catch (error) {
+    console.error('💥 API key validation error:', error);
+    
+    // Handle specific error types
+    if (error instanceof Error) {
+      if (error.name === 'AbortError') {
+        return { valid: false, error: 'Request timed out - please try again' };
+      } else if (error.message.includes('Failed to fetch') || error.message.includes('CORS')) {
+        // CORS error - ElevenLabs likely blocks browser requests
+        // In this case, we'll do a "soft validation" - format check only
+        console.log('🚨 CORS error detected - falling back to format validation');
+        return {
+          valid: true, // Assume valid if format is correct
+          error: undefined
+        };
+      }
+    }
+    
+    return { 
+      valid: false, 
+      error: error instanceof Error ? error.message : 'Network error occurred'
+    };
+  }
 }

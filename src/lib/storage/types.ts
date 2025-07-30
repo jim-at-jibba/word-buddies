@@ -30,9 +30,9 @@ export interface StoredWordAttempt {
 
 export interface UserSettings {
   name?: string;
+  elevenLabsApiKey?: string; // Encrypted ElevenLabs API key for premium TTS
   // Future settings will be added here:
   // yearGroup?: number;
-  // elevenLabsApiKey?: string;
   version: number;
   lastUpdated: number;
 }

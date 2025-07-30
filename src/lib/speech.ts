@@ -17,9 +17,9 @@ function isIOSChrome(): boolean {
   return isIOS() && /CriOS/.test(navigator.userAgent);
 }
 
-export function isSpeechSupported(): boolean {
+export async function isSpeechSupported(): Promise<boolean> {
   // ElevenLabs is always preferred if available
-  if (isElevenLabsAvailable()) {
+  if (await isElevenLabsAvailable()) {
     return true;
   }
   
@@ -38,8 +38,8 @@ export function isSpeechSupported(): boolean {
 
 // Initialize speech synthesis with user interaction (required for mobile)
 export function initializeSpeech(): Promise<void> {
-  return new Promise((resolve) => {
-    if (!isSpeechSupported()) {
+  return new Promise(async (resolve) => {
+    if (!(await isSpeechSupported())) {
       resolve();
       return;
     }
@@ -123,14 +123,14 @@ function ensureVoicesLoaded(): Promise<SpeechSynthesisVoice[]> {
 }
 
 export async function speakWord(word: string): Promise<void> {
-  if (!isSpeechSupported()) {
+  if (!(await isSpeechSupported())) {
     console.warn('Speech synthesis not supported');
     return;
   }
 
   try {
     // Try ElevenLabs first if available
-    if (isElevenLabsAvailable()) {
+    if (await isElevenLabsAvailable()) {
       logger.tts('Using ElevenLabs for:', word);
       await speakWithElevenLabs(word);
       return;
@@ -143,7 +143,7 @@ export async function speakWord(word: string): Promise<void> {
   } catch (error) {
     logger.error('Error in speakWord:', error);
     // Try fallback if ElevenLabs failed
-    if (isElevenLabsAvailable()) {
+    if (await isElevenLabsAvailable()) {
       logger.tts('ElevenLabs failed, trying browser speech fallback');
       try {
         await speakWordWithBrowserAPI(word);
@@ -335,14 +335,14 @@ export function speakEncouragement(type: 'correct' | 'incorrect' | 'try-again'):
 }
 
 export async function speakText(text: string): Promise<void> {
-  if (!isSpeechSupported()) {
+  if (!(await isSpeechSupported())) {
     console.warn('Speech synthesis not supported');
     return;
   }
 
   try {
     // Try ElevenLabs first if available
-    if (isElevenLabsAvailable()) {
+    if (await isElevenLabsAvailable()) {
       console.log('🎙️ Using ElevenLabs for text:', text);
       await speakWithElevenLabs(text);
       return;
@@ -355,7 +355,7 @@ export async function speakText(text: string): Promise<void> {
   } catch (error) {
     console.error('Error in speakText:', error);
     // Try fallback if ElevenLabs failed
-    if (isElevenLabsAvailable()) {
+    if (await isElevenLabsAvailable()) {
       logger.tts('ElevenLabs failed, trying browser speech fallback');
       try {
         await speakTextWithBrowserAPI(text);

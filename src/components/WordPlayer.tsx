@@ -24,7 +24,11 @@ const WordPlayer = memo(function WordPlayer({
   const [speechInitialized, setSpeechInitialized] = useState(false);
 
   useEffect(() => {
-    setSpeechSupported(isSpeechSupported());
+    const checkSpeechSupport = async () => {
+      const supported = await isSpeechSupported();
+      setSpeechSupported(supported);
+    };
+    checkSpeechSupport();
   }, []);
 
   const playWord = useCallback(async () => {

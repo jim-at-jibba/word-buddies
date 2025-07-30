@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react';
+import { useState, useEffect, Suspense, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -9,6 +9,7 @@ import ResultsCard from '@/components/ResultsCard';
 import { SessionResult } from '@/types';
 import { speakEncouragement, initializeSpeech } from '@/lib/speech';
 import { getSessionById } from '@/lib/client-spelling-logic';
+import { logger } from '@/lib/logger';
 
 function ResultsPageContent() {
   const router = useRouter();
@@ -19,22 +20,7 @@ function ResultsPageContent() {
   const [loading, setLoading] = useState(true);
   const [hasSpokenCelebration, setHasSpokenCelebration] = useState(false);
 
-  useEffect(() => {
-    if (sessionId) {
-      fetchSessionResults();
-    } else {
-      router.push('/');
-    }
-  }, [sessionId, router]);
-
-  useEffect(() => {
-    if (sessionResult && !hasSpokenCelebration) {
-      speakCelebration();
-      setHasSpokenCelebration(true);
-    }
-  }, [sessionResult, hasSpokenCelebration]);
-
-  const fetchSessionResults = async () => {
+  const fetchSessionResults = useCallback(async () => {
     try {
       if (!sessionId) {
         router.push('/');
@@ -46,18 +32,18 @@ function ResultsPageContent() {
       if (sessionResult) {
         setSessionResult(sessionResult);
       } else {
-        console.error('Session not found');
+        logger.error('Session not found');
         router.push('/');
       }
     } catch (error) {
-      console.error('Error fetching session results:', error);
+      logger.error('Error fetching session results:', error);
       router.push('/');
     } finally {
       setLoading(false);
     }
-  };
+  }, [sessionId, router]);
 
-  const speakCelebration = async () => {
+  const speakCelebration = useCallback(async () => {
     if (!sessionResult) return;
     
     try {
@@ -76,9 +62,24 @@ function ResultsPageContent() {
       
       await speakEncouragement(celebrationType);
     } catch (error) {
-      console.error('Error speaking celebration:', error);
+      logger.error('Error speaking celebration:', error);
     }
-  };
+  }, [sessionResult]);
+
+  useEffect(() => {
+    if (sessionId) {
+      fetchSessionResults();
+    } else {
+      router.push('/');
+    }
+  }, [sessionId, router, fetchSessionResults]);
+
+  useEffect(() => {
+    if (sessionResult && !hasSpokenCelebration) {
+      speakCelebration();
+      setHasSpokenCelebration(true);
+    }
+  }, [sessionResult, hasSpokenCelebration, speakCelebration]);
 
   const formatDuration = (seconds: number): string => {
     const minutes = Math.floor(seconds / 60);

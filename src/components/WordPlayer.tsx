@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import { speakWord, isSpeechSupported, initializeSpeech } from '@/lib/speech';
 import CatMascot from './CatMascot';
@@ -27,16 +27,7 @@ export default function WordPlayer({
     setSpeechSupported(isSpeechSupported());
   }, []);
 
-  useEffect(() => {
-    console.log('🎵 WordPlayer useEffect triggered - word:', word, 'autoPlay:', autoPlay, 'speechSupported:', speechSupported, 'hasPlayedOnce:', hasPlayedOnce);
-    if (autoPlay && speechSupported && word && !hasPlayedOnce) {
-      console.log('🔊 WordPlayer: Auto-playing word:', word);
-      playWord();
-      setHasPlayedOnce(true);
-    }
-  }, [word, autoPlay, speechSupported, hasPlayedOnce]);
-
-  const playWord = async () => {
+  const playWord = useCallback(async () => {
     if (!speechSupported || !word || isPlaying) return;
 
     console.log('🗣️ About to speak word:', word);
@@ -58,7 +49,16 @@ export default function WordPlayer({
     } finally {
       setIsPlaying(false);
     }
-  };
+  }, [speechSupported, word, isPlaying, speechInitialized, setSpeechInitialized, onPlayComplete]);
+
+  useEffect(() => {
+    console.log('🎵 WordPlayer useEffect triggered - word:', word, 'autoPlay:', autoPlay, 'speechSupported:', speechSupported, 'hasPlayedOnce:', hasPlayedOnce);
+    if (autoPlay && speechSupported && word && !hasPlayedOnce) {
+      console.log('🔊 WordPlayer: Auto-playing word:', word);
+      playWord();
+      setHasPlayedOnce(true);
+    }
+  }, [word, autoPlay, speechSupported, hasPlayedOnce, playWord]);
 
   if (!speechSupported) {
     return (

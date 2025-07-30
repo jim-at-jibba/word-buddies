@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import WordPlayer from '@/components/WordPlayer';
@@ -10,13 +10,14 @@ import { PracticeWord, SpellingAttempt } from '@/types';
 import { checkSpelling } from '@/lib/client-utils';
 import { speakEncouragement, initializeSpeech } from '@/lib/speech';
 import { getRandomWord, updateWordStats, createSession, updateSessionDuration } from '@/lib/client-spelling-logic';
+import { logger } from '@/lib/logger';
 
 export default function PracticePage() {
   const router = useRouter();
   const [currentWord, setCurrentWord] = useState<PracticeWord | null>(null);
   
   // Debug: Log when component renders and what currentWord is
-  console.log('🔄 PracticePage render - currentWord:', currentWord?.word);
+  logger.ui('PracticePage render - currentWord:', currentWord?.word);
   const [checkedWord, setCheckedWord] = useState<string>('');
   const [attempts, setAttempts] = useState<SpellingAttempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -31,31 +32,30 @@ export default function PracticePage() {
   const hasInitializedRef = useRef(false);
   const speechInitializedRef = useRef(false);
 
+  const fetchNextWord = useCallback(async () => {
+    logger.debug('fetchNextWord() called at:', new Date().toISOString());
+    setIsLoading(true);
+    try {
+      const word = await getRandomWord();
+      logger.debug('Fetched new word:', word.word, 'at:', new Date().toISOString());
+      logger.debug('Previous currentWord was:', currentWord?.word);
+      setCurrentWord(word);
+      logger.debug('Setting currentWord to:', word.word);
+    } catch (error) {
+      logger.error('Error fetching word:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [currentWord]);
+
   useEffect(() => {
     if (!hasInitializedRef.current) {
-      console.log('🚀 Initial word fetch - preventing double execution');
+      logger.debug('Initial word fetch - preventing double execution');
       hasInitializedRef.current = true;
       fetchNextWord();
       setSessionStartTime(new Date());
     }
-  }, []);
-
-  const fetchNextWord = async () => {
-    console.log('🔄 fetchNextWord() called at:', new Date().toISOString());
-    console.trace('Call stack:');
-    setIsLoading(true);
-    try {
-      const word = await getRandomWord();
-      console.log('✅ Fetched new word:', word.word, 'at:', new Date().toISOString());
-      console.log('📋 Previous currentWord was:', currentWord?.word);
-      setCurrentWord(word);
-      console.log('📋 Setting currentWord to:', word.word);
-    } catch (error) {
-      console.error('Error fetching word:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+  }, [fetchNextWord]);
 
   const handleSpellingSubmit = async (userSpelling: string) => {
     console.log('📝 handleSpellingSubmit called with:', userSpelling, 'at:', new Date().toISOString());

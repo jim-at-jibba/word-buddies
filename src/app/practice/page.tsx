@@ -9,6 +9,7 @@ import TTSErrorBoundary from '@/components/TTSErrorBoundary';
 import { NotificationContainer } from '@/components/NotificationToast';
 import { AudioLoadingSpinner } from '@/components/LoadingSpinner';
 import OfflineIndicator from '@/components/OfflineIndicator';
+import TTSStatusIndicator from '@/components/TTSStatusIndicator';
 import { useNotifications } from '@/hooks/useNotifications';
 import { PracticeWord, SpellingAttempt } from '@/types';
 import { checkSpelling } from '@/lib/client-utils';
@@ -308,10 +309,13 @@ export default function PracticePage() {
             <span>End Session</span>
           </motion.button>
           
-          <div className="bg-white rounded-full px-4 py-2 shadow-cat">
-            <p className="font-kid-friendly text-cat-dark">
-              Word {wordsCompleted + 1} of 5
-            </p>
+          <div className="flex flex-col items-center space-y-2">
+            <div className="bg-white rounded-full px-4 py-2 shadow-cat">
+              <p className="font-kid-friendly text-cat-dark">
+                Word {wordsCompleted + 1} of 5
+              </p>
+            </div>
+            <TTSStatusIndicator />
           </div>
         </div>
 

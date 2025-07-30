@@ -1,5 +1,6 @@
 // Speech synthesis utilities for the spelling app
 import { speakWithElevenLabs, isElevenLabsAvailable } from './elevenlabs-speech';
+import { logger } from './logger';
 
 // Track if speech has been initialized with user interaction
 let speechInitialized = false;
@@ -130,24 +131,24 @@ export async function speakWord(word: string): Promise<void> {
   try {
     // Try ElevenLabs first if available
     if (isElevenLabsAvailable()) {
-      console.log('🎙️ Using ElevenLabs for:', word);
+      logger.tts('Using ElevenLabs for:', word);
       await speakWithElevenLabs(word);
       return;
     }
 
     // Fallback to browser speech synthesis
-    console.log('🔊 Using browser speech synthesis for:', word);
+    logger.tts('Using browser speech synthesis for:', word);
     await speakWordWithBrowserAPI(word);
 
   } catch (error) {
-    console.error('Error in speakWord:', error);
+    logger.error('Error in speakWord:', error);
     // Try fallback if ElevenLabs failed
     if (isElevenLabsAvailable()) {
-      console.log('🔄 ElevenLabs failed, trying browser speech fallback');
+      logger.tts('ElevenLabs failed, trying browser speech fallback');
       try {
         await speakWordWithBrowserAPI(word);
       } catch (fallbackError) {
-        console.error('Both speech methods failed:', fallbackError);
+        logger.error('Both speech methods failed:', fallbackError);
       }
     }
   }
@@ -233,7 +234,7 @@ async function speakWordWithBrowserAPI(word: string): Promise<void> {
       let resolved = false;
       
       utterance.onstart = () => {
-        console.log('Browser speech started:', word);
+        logger.debug('Browser speech started:', word);
       };
 
       utterance.onend = () => {
@@ -245,7 +246,7 @@ async function speakWordWithBrowserAPI(word: string): Promise<void> {
       };
 
       utterance.onerror = (event) => {
-        console.error('Browser speech synthesis error:', event);
+        logger.error('Browser speech synthesis error:', event);
         if (!resolved) {
           resolved = true;
           clearTimeout(timeoutId);
@@ -258,12 +259,12 @@ async function speakWordWithBrowserAPI(word: string): Promise<void> {
       const timeoutId = setTimeout(() => {
         if (!resolved) {
           resolved = true;
-          console.warn('Browser speech timeout, resolving');
+          logger.warn('Browser speech timeout, resolving');
           // Force cancel on iOS
           if (isIOS()) {
             try {
               window.speechSynthesis.cancel();
-            } catch (e) {
+            } catch {
               // Ignore errors
             }
           }
@@ -280,10 +281,10 @@ async function speakWordWithBrowserAPI(word: string): Promise<void> {
           if (!resolved) {
             resolved = true;
             clearTimeout(timeoutId);
-            console.warn('iOS Chrome browser speech fallback triggered');
+            logger.debug('iOS Chrome browser speech fallback triggered');
             try {
               window.speechSynthesis.cancel();
-            } catch (e) {
+            } catch {
               // Ignore errors
             }
             resolve();
@@ -292,7 +293,7 @@ async function speakWordWithBrowserAPI(word: string): Promise<void> {
       }
 
     } catch (error) {
-      console.error('Error in browser speech:', error);
+      logger.error('Error in browser speech:', error);
       resolve();
     }
   });
@@ -355,11 +356,11 @@ export async function speakText(text: string): Promise<void> {
     console.error('Error in speakText:', error);
     // Try fallback if ElevenLabs failed
     if (isElevenLabsAvailable()) {
-      console.log('🔄 ElevenLabs failed, trying browser speech fallback');
+      logger.tts('ElevenLabs failed, trying browser speech fallback');
       try {
         await speakTextWithBrowserAPI(text);
       } catch (fallbackError) {
-        console.error('Both speech methods failed:', fallbackError);
+        logger.error('Both speech methods failed:', fallbackError);
       }
     }
   }
@@ -447,7 +448,7 @@ async function speakTextWithBrowserAPI(text: string): Promise<void> {
       };
 
       utterance.onerror = (event) => {
-        console.error('Browser speech synthesis error:', event);
+        logger.error('Browser speech synthesis error:', event);
         if (!resolved) {
           resolved = true;
           clearTimeout(timeoutId);
@@ -465,7 +466,7 @@ async function speakTextWithBrowserAPI(text: string): Promise<void> {
           if (isIOS()) {
             try {
               window.speechSynthesis.cancel();
-            } catch (e) {
+            } catch {
               // Ignore errors
             }
           }
@@ -484,7 +485,7 @@ async function speakTextWithBrowserAPI(text: string): Promise<void> {
             console.warn('iOS Chrome browser speech text fallback triggered');
             try {
               window.speechSynthesis.cancel();
-            } catch (e) {
+            } catch {
               // Ignore errors
             }
             resolve();

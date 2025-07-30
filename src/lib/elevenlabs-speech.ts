@@ -1,4 +1,5 @@
 // ElevenLabs Text-to-Speech service for reliable cross-platform audio
+import { logger } from './logger';
 
 interface ElevenLabsConfig {
   apiKey: string;
@@ -16,7 +17,7 @@ function getElevenLabsConfig(): ElevenLabsConfig | null {
   const apiUrl = process.env.NEXT_PUBLIC_ELEVENLABS_API_URL || 'https://api.elevenlabs.io/v1';
 
   if (!apiKey || apiKey === 'your_elevenlabs_api_key_here') {
-    console.warn('ElevenLabs API key not configured');
+    logger.warn('ElevenLabs API key not configured');
     return null;
   }
 
@@ -95,13 +96,13 @@ function playAudioFromUrl(audioUrl: string): Promise<void> {
 // Main speech function using ElevenLabs
 export async function speakWithElevenLabs(text: string): Promise<void> {
   try {
-    console.log('🎙️ Speaking with ElevenLabs:', text);
+    logger.tts('Speaking with ElevenLabs:', text);
     
     // Check cache first
     let audioUrl = audioCache.get(text);
     
     if (!audioUrl) {
-      console.log('🔄 Generating new audio for:', text);
+      logger.debug('Generating new audio for:', text);
       audioUrl = await generateSpeechAudio(text);
       
       // Cache the audio URL
@@ -116,15 +117,15 @@ export async function speakWithElevenLabs(text: string): Promise<void> {
         }
       }, 10 * 60 * 1000);
     } else {
-      console.log('🎵 Using cached audio for:', text);
+      logger.debug('Using cached audio for:', text);
     }
     
     // Play the audio
     await playAudioFromUrl(audioUrl);
-    console.log('✅ ElevenLabs speech completed for:', text);
+    logger.debug('ElevenLabs speech completed for:', text);
     
   } catch (error) {
-    console.error('❌ ElevenLabs speech error:', error);
+    logger.error('ElevenLabs speech error:', error);
     throw error;
   }
 }

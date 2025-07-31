@@ -241,6 +241,23 @@ export default function ParentsPage() {
                 </div>
               </div>
 
+              <div className="bg-yellow-50 border-2 border-yellow-200 p-4 rounded-cat mb-4">
+                <div className="flex items-start space-x-3">
+                  <div className="text-yellow-600 text-xl">⚠️</div>
+                  <div>
+                    <h5 className="font-kid-friendly font-bold text-yellow-800 mb-2">
+                      Security Disclaimer
+                    </h5>
+                    <p className="font-kid-friendly text-yellow-700 text-sm">
+                      <strong>Use at your own risk:</strong> While we have implemented strong encryption and security measures, 
+                      you are using your ElevenLabs API key at your own risk. We are not liable if your API key gets 
+                      compromised through browser vulnerabilities, malicious extensions, or other security issues beyond our control. 
+                      Monitor your ElevenLabs usage regularly and revoke/regenerate your API key if you suspect any unauthorized access.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
               <div className="bg-cat-light p-4 rounded-cat">
                 <p className="font-kid-friendly text-cat-gray text-sm text-center">
                   <strong>Important:</strong> ElevenLabs integration is completely optional. 

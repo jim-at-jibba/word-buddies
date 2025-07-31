@@ -13,7 +13,8 @@ function isIOS(): boolean {
 export function getAudioContext(): AudioContext {
   if (!audioContext) {
     // Use appropriate AudioContext constructor
-    const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const win = window as Window & { webkitAudioContext?: typeof AudioContext };
+    const AudioContextClass = window.AudioContext || win.webkitAudioContext;
     if (!AudioContextClass) {
       throw new Error('AudioContext not supported');
     }
@@ -65,7 +66,11 @@ export async function initializeAudioContext(): Promise<void> {
         if (source.start) {
           source.start(0);
         } else {
-          (source as any).noteOn(0);
+          // Legacy support for older browsers
+          const legacySource = source as AudioBufferSourceNode & { noteOn?: (when: number) => void };
+          if (legacySource.noteOn) {
+            legacySource.noteOn(0);
+          }
         }
         
         logger.debug('iOS audio unlock buffer played');
@@ -129,7 +134,11 @@ export async function playAudioWithContext(audioUrl: string): Promise<void> {
         if (source.start) {
           source.start(0);
         } else {
-          (source as any).noteOn(0);
+          // Legacy support for older browsers
+          const legacySource = source as AudioBufferSourceNode & { noteOn?: (when: number) => void };
+          if (legacySource.noteOn) {
+            legacySource.noteOn(0);
+          }
         }
         
         logger.debug('Audio playback started');
@@ -143,7 +152,8 @@ export async function playAudioWithContext(audioUrl: string): Promise<void> {
 
 // Check if AudioContext is available and working
 export function isAudioContextSupported(): boolean {
-  return !!(window.AudioContext || (window as any).webkitAudioContext);
+  const win = window as Window & { webkitAudioContext?: typeof AudioContext };
+  return !!(window.AudioContext || win.webkitAudioContext);
 }
 
 // Get current AudioContext state

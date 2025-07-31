@@ -46,8 +46,9 @@ export default function IOSAudioInit({ onInitialized }: IOSAudioInitProps) {
       }
       
       // Method 3: AudioContext
-      if (window.AudioContext || (window as any).webkitAudioContext) {
-        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+      const win = window as Window & { webkitAudioContext?: typeof AudioContext };
+      if (window.AudioContext || win.webkitAudioContext) {
+        const AudioContextClass = window.AudioContext || win.webkitAudioContext;
         const ctx = new AudioContextClass();
         if (ctx.state === 'suspended') {
           ctx.resume().catch(() => {});

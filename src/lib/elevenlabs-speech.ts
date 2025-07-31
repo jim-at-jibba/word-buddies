@@ -141,10 +141,6 @@ async function generateSpeechAudio(text: string): Promise<string> {
   });
 }
 
-// Detect iOS
-function isIOS(): boolean {
-  return /iPad|iPhone|iPod/.test(navigator.userAgent);
-}
 
 // Play audio from URL
 function playAudioFromUrl(audioUrl: string): Promise<void> {

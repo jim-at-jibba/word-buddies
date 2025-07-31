@@ -1,0 +1,24 @@
+#!/usr/bin/env sh
+
+# Exit on error
+set -e
+
+echo "🔍 Running pre-commit checks..."
+
+# Run lint-staged if available, otherwise run full lint
+if [ -f "package.json" ] && grep -q '"lint-staged"' package.json; then
+  echo "🚀 Running lint-staged..."
+  npx lint-staged
+else
+  echo "📝 Running ESLint on staged files..."
+  # Get list of staged TypeScript/JavaScript files
+  STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E '\.(js|jsx|ts|tsx)$' || true)
+  
+  if [ -n "$STAGED_FILES" ]; then
+    npm run lint
+  else
+    echo "No JavaScript/TypeScript files to lint"
+  fi
+fi
+
+echo "✅ Pre-commit checks passed!"

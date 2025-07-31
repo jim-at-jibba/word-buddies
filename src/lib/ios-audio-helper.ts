@@ -20,8 +20,9 @@ export async function initializeIOSAudio(): Promise<void> {
   
   try {
     // Method 1: Try AudioContext
-    if (window.AudioContext || (window as any).webkitAudioContext) {
-      const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+    const win = window as Window & { webkitAudioContext?: typeof AudioContext };
+    if (window.AudioContext || win.webkitAudioContext) {
+      const AudioContextClass = window.AudioContext || win.webkitAudioContext;
       const ctx = new AudioContextClass();
       
       // Resume if suspended

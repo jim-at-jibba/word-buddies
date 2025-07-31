@@ -1,0 +1,22 @@
+#!/usr/bin/env sh
+
+# Exit on error
+set -e
+
+echo "🔍 Running pre-push checks..."
+
+# Run linting
+echo "📝 Running ESLint..."
+npm run lint
+
+# Run type checking
+echo "🔎 Running TypeScript type check..."
+npm run type-check
+
+# Run tests if they exist
+if [ -f "package.json" ] && grep -q '"test"' package.json; then
+  echo "🧪 Running tests..."
+  npm run test
+fi
+
+echo "✅ All pre-push checks passed!"

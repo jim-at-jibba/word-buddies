@@ -37,39 +37,25 @@ export async function isSpeechSupported(): Promise<boolean> {
 }
 
 // Initialize speech synthesis with user interaction (required for mobile)
-export function initializeSpeech(): Promise<void> {
-  return new Promise(async (resolve) => {
-    if (!(await isSpeechSupported())) {
-      resolve();
-      return;
-    }
-
-    // Create a silent utterance to initialize speech on mobile
-    const utterance = new SpeechSynthesisUtterance('');
-    utterance.volume = 0;
-    
-    utterance.onstart = () => {
-      speechInitialized = true;
-      window.speechSynthesis.cancel(); // Cancel the silent utterance
-    };
-    
-    utterance.onend = () => {
-      speechInitialized = true;
-      resolve();
-    };
-
-    utterance.onerror = () => {
-      speechInitialized = true;
-      resolve();
-    };
-
-    // Load voices
-    loadVoices().then((voices) => {
-      availableVoices = voices;
-      voicesLoaded = true;
-      window.speechSynthesis.speak(utterance);
-    });
-  });
+export async function initializeSpeech(): Promise<void> {
+  logger.debug('Initializing speech systems...');
+  
+  if (speechInitialized) {
+    logger.debug('Speech already initialized');
+    return;
+  }
+  
+  speechInitialized = true;
+  
+  // Try to load voices
+  try {
+    const voices = await loadVoices();
+    availableVoices = voices;
+    voicesLoaded = voices.length > 0;
+    logger.debug(`Loaded ${voices.length} voices`);
+  } catch (error) {
+    logger.warn('Failed to load voices:', error);
+  }
 }
 
 // Enhanced voice loading for mobile
@@ -246,28 +232,34 @@ async function speakWordWithBrowserAPI(word: string): Promise<void> {
       };
 
       utterance.onerror = (event) => {
-        logger.error('Browser speech synthesis error:', event);
-        if (!resolved) {
-          resolved = true;
-          clearTimeout(timeoutId);
-          resolve();
+        // On iOS, some errors are expected but speech still works
+        if (isIOS()) {
+          logger.debug('iOS speech event (may be normal):', event);
+          // Don't resolve immediately on iOS - let it try to continue
+          // Only resolve after a delay to see if speech continues
+          setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeoutId);
+              resolve();
+            }
+          }, 1000);
+        } else {
+          logger.error('Browser speech synthesis error:', event);
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeoutId);
+            resolve();
+          }
         }
       };
 
-      // iOS-specific timeout (very short for iOS Chrome issues)
-      const timeoutDuration = isIOSChrome() ? 800 : (isIOS() ? 2000 : 5000);
+      // Longer timeout for iOS to let speech complete
+      const timeoutDuration = isIOS() ? 10000 : 5000; // 10 seconds for iOS
       const timeoutId = setTimeout(() => {
         if (!resolved) {
           resolved = true;
           logger.warn('Browser speech timeout, resolving');
-          // Force cancel on iOS
-          if (isIOS()) {
-            try {
-              window.speechSynthesis.cancel();
-            } catch {
-              // Ignore errors
-            }
-          }
           resolve();
         }
       }, timeoutDuration);
@@ -275,22 +267,7 @@ async function speakWordWithBrowserAPI(word: string): Promise<void> {
       // Speak the utterance
       window.speechSynthesis.speak(utterance);
       
-      // iOS Chrome fallback - if no events fire within 500ms, just resolve
-      if (isIOSChrome()) {
-        setTimeout(() => {
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(timeoutId);
-            logger.debug('iOS Chrome browser speech fallback triggered');
-            try {
-              window.speechSynthesis.cancel();
-            } catch {
-              // Ignore errors
-            }
-            resolve();
-          }
-        }, 500);
-      }
+      // Don't use aggressive fallback on iOS - let speech complete
 
     } catch (error) {
       logger.error('Error in browser speech:', error);
@@ -448,16 +425,29 @@ async function speakTextWithBrowserAPI(text: string): Promise<void> {
       };
 
       utterance.onerror = (event) => {
-        logger.error('Browser speech synthesis error:', event);
-        if (!resolved) {
-          resolved = true;
-          clearTimeout(timeoutId);
-          resolve();
+        // On iOS, some errors are expected but speech still works
+        if (isIOS()) {
+          logger.debug('iOS speech text event (may be normal):', event);
+          // Don't resolve immediately on iOS - let it try to continue
+          setTimeout(() => {
+            if (!resolved) {
+              resolved = true;
+              clearTimeout(timeoutId);
+              resolve();
+            }
+          }, 1000);
+        } else {
+          logger.error('Browser speech synthesis error:', event);
+          if (!resolved) {
+            resolved = true;
+            clearTimeout(timeoutId);
+            resolve();
+          }
         }
       };
 
-      // iOS-specific timeout (very short for iOS Chrome issues)
-      const timeoutDuration = isIOSChrome() ? 800 : (isIOS() ? 2000 : 10000);
+      // Longer timeout for iOS to let speech complete
+      const timeoutDuration = isIOS() ? 15000 : 10000; // 15 seconds for iOS
       const timeoutId = setTimeout(() => {
         if (!resolved) {
           resolved = true;
@@ -476,22 +466,7 @@ async function speakTextWithBrowserAPI(text: string): Promise<void> {
 
       window.speechSynthesis.speak(utterance);
       
-      // iOS Chrome fallback - if no events fire within 500ms, just resolve
-      if (isIOSChrome()) {
-        setTimeout(() => {
-          if (!resolved) {
-            resolved = true;
-            clearTimeout(timeoutId);
-            console.warn('iOS Chrome browser speech text fallback triggered');
-            try {
-              window.speechSynthesis.cancel();
-            } catch {
-              // Ignore errors
-            }
-            resolve();
-          }
-        }, 500);
-      }
+      // Don't use aggressive fallback on iOS - let speech complete
 
     } catch (error) {
       console.error('Error in browser speech text:', error);

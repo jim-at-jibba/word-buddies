@@ -164,7 +164,25 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.6 }}
             className="mt-8"
           >
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+              <Link href="/review">
+                <motion.div
+                  className="bg-white rounded-cat p-4 shadow-cat text-center hover:shadow-cat-hover transition-all duration-200 cursor-pointer relative"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  {progressStats && progressStats.wordsNeedingReview > 0 && (
+                    <div className="absolute -top-2 -right-2 bg-cat-error text-white rounded-full w-6 h-6 flex items-center justify-center text-xs font-bold">
+                      {progressStats.wordsNeedingReview}
+                    </div>
+                  )}
+                  <div className="text-3xl mb-2">🔄</div>
+                  <h4 className="font-kid-friendly font-bold text-cat-dark text-sm">
+                    Review Words
+                  </h4>
+                </motion.div>
+              </Link>
+
               <Link href="/sessions">
                 <motion.div
                   className="bg-white rounded-cat p-4 shadow-cat text-center hover:shadow-cat-hover transition-all duration-200 cursor-pointer"

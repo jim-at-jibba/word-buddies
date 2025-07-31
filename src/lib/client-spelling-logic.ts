@@ -71,6 +71,33 @@ export async function getRandomWord(): Promise<PracticeWord> {
   }
 }
 
+export async function getRandomReviewWord(): Promise<PracticeWord | null> {
+  try {
+    await ensureInitialized();
+    
+    const now = Date.now();
+    
+    // Get only words that need review
+    const reviewWords = await browserDB.getWordsForReview(now);
+    
+    if (reviewWords.length === 0) {
+      // No words need review
+      return null;
+    }
+    
+    const randomIndex = Math.floor(Math.random() * reviewWords.length);
+    const word = reviewWords[randomIndex];
+    return {
+      word: word.word,
+      isNewWord: false, // Review words are never new
+      difficulty: word.difficulty,
+    };
+  } catch (error) {
+    console.error('Error getting random review word:', error);
+    return null;
+  }
+}
+
 export async function updateWordStats(wordText: string, isCorrect: boolean): Promise<void> {
   try {
     await ensureInitialized();

@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import SpellingInput from '@/components/SpellingInput';
 import CatMascot from '@/components/CatMascot';
 import TTSErrorBoundary from '@/components/TTSErrorBoundary';
@@ -11,11 +11,12 @@ import { AudioLoadingSpinner } from '@/components/LoadingSpinner';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import TTSStatusIndicator from '@/components/TTSStatusIndicator';
 import IOSAudioInit from '@/components/IOSAudioInit';
+import ReviewModeIndicator from '@/components/ReviewModeIndicator';
 import { useNotifications } from '@/hooks/useNotifications';
 import { PracticeWord, SpellingAttempt } from '@/types';
 import { checkSpelling } from '@/lib/client-utils';
 import { speakEncouragement, speakWord } from '@/lib/speech';
-import { getRandomWord, updateWordStats, createSession, updateSessionDuration } from '@/lib/client-spelling-logic';
+import { getRandomWord, getRandomReviewWord, updateWordStats, createSession, updateSessionDuration } from '@/lib/client-spelling-logic';
 import { logger } from '@/lib/logger';
 
 // Lazy load the WordPlayer component
@@ -23,6 +24,8 @@ const WordPlayer = lazy(() => import('@/components/WordPlayer'));
 
 export default function PracticePage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isReviewMode = searchParams.get('mode') === 'review';
   const notifications = useNotifications();
   const [currentWord, setCurrentWord] = useState<PracticeWord | null>(null);
   
@@ -55,7 +58,16 @@ export default function PracticePage() {
     setIsRetrying(false);
     setUserFirstAttempt('');
     try {
-      const word = await getRandomWord();
+      const word = isReviewMode ? await getRandomReviewWord() : await getRandomWord();
+      if (!word) {
+        // No more review words available
+        notifications.notifySuccess(
+          'Review Complete!',
+          'You\'ve reviewed all available words. Great job!'
+        );
+        setTimeout(() => router.push('/review'), 2000);
+        return;
+      }
       logger.debug('Fetched new word:', word.word, 'at:', new Date().toISOString());
       logger.debug('Previous currentWord was:', currentWord?.word);
       setCurrentWord(word);
@@ -73,7 +85,7 @@ export default function PracticePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentWord, notifications]);
+  }, [currentWord, notifications, isReviewMode, router]);
 
   useEffect(() => {
     if (!hasInitializedRef.current) {
@@ -306,6 +318,7 @@ export default function PracticePage() {
                 Word {wordsCompleted + 1} of 5
               </p>
             </div>
+            {isReviewMode && <ReviewModeIndicator />}
             <TTSStatusIndicator />
           </div>
         </div>

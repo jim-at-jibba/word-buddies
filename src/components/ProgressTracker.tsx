@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { memo } from 'react';
+import Link from 'next/link';
 import { ProgressStats } from '@/types';
 
 interface ProgressTrackerProps {
@@ -60,40 +61,50 @@ const ProgressTracker = memo(function ProgressTracker({ stats, className = '' }:
       </motion.h3>
 
       <div className="grid grid-cols-2 gap-4">
-        {progressItems.map((item, index) => (
-          <motion.div
-            key={item.label}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ 
-              duration: 0.3, 
-              delay: index * 0.1,
-              type: "spring",
-              stiffness: 100
-            }}
-            className={`rounded-cat p-4 text-center border-2 border-transparent transition-all duration-200 ${
-              item.label === 'Words Learned' ? 'bg-cat-orange/20 hover:border-cat-orange' :
-              item.label === 'Average Score' ? 'bg-cat-success/20 hover:border-cat-success' :
-              item.label === 'Streak Days' ? 'bg-cat-warning/20 hover:border-cat-warning' :
-              'bg-cat-error/20 hover:border-cat-error'
-            }`}
-          >
-            <div className="text-2xl mb-2">{item.icon}</div>
-            
-            <div className={`text-2xl font-bold font-kid-friendly ${
-              item.label === 'Words Learned' ? 'text-cat-orange' :
-              item.label === 'Average Score' ? 'text-cat-success' :
-              item.label === 'Streak Days' ? 'text-cat-warning' :
-              'text-cat-error'
-            }`}>
-              {item.value}
-            </div>
-            
-            <div className="text-sm text-cat-gray font-kid-friendly mt-1">
-              {item.label}
-            </div>
-          </motion.div>
-        ))}
+        {progressItems.map((item, index) => {
+          const content = (
+            <motion.div
+              key={item.label}
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ 
+                duration: 0.3, 
+                delay: index * 0.1,
+                type: "spring",
+                stiffness: 100
+              }}
+              className={`rounded-cat p-4 text-center border-2 border-transparent transition-all duration-200 ${
+                item.label === 'Words Learned' ? 'bg-cat-orange/20 hover:border-cat-orange' :
+                item.label === 'Average Score' ? 'bg-cat-success/20 hover:border-cat-success' :
+                item.label === 'Streak Days' ? 'bg-cat-warning/20 hover:border-cat-warning' :
+                'bg-cat-error/20 hover:border-cat-error'
+              } ${item.label === 'Need Review' && Number(item.value) > 0 ? 'cursor-pointer' : ''}`}
+            >
+              <div className="text-2xl mb-2">{item.icon}</div>
+              
+              <div className={`text-2xl font-bold font-kid-friendly ${
+                item.label === 'Words Learned' ? 'text-cat-orange' :
+                item.label === 'Average Score' ? 'text-cat-success' :
+                item.label === 'Streak Days' ? 'text-cat-warning' :
+                'text-cat-error'
+              }`}>
+                {item.value}
+              </div>
+              
+              <div className="text-sm text-cat-gray font-kid-friendly mt-1">
+                {item.label}
+              </div>
+            </motion.div>
+          );
+
+          return item.label === 'Need Review' && Number(item.value) > 0 ? (
+            <Link key={item.label} href="/review">
+              {content}
+            </Link>
+          ) : (
+            content
+          );
+        })}
       </div>
 
       {/* Progress Bar for Average Score */}

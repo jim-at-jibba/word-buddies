@@ -141,6 +141,11 @@ async function generateSpeechAudio(text: string): Promise<string> {
   });
 }
 
+// Detect iOS
+function isIOS(): boolean {
+  return /iPad|iPhone|iPod/.test(navigator.userAgent);
+}
+
 // Play audio from URL
 function playAudioFromUrl(audioUrl: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -151,16 +156,16 @@ function playAudioFromUrl(audioUrl: string): Promise<void> {
     audio.playbackRate = 0.9; // Slightly slower for clarity
     
     audio.onloadeddata = () => {
-      console.log('Audio loaded successfully');
+      logger.debug('Audio loaded successfully');
     };
     
     audio.onended = () => {
-      console.log('Audio playback completed');
+      logger.debug('Audio playback completed');
       resolve();
     };
     
     audio.onerror = (error) => {
-      console.error('Audio playback error:', error);
+      logger.error('Audio playback error:', error);
       reject(new Error('Audio playback failed'));
     };
     

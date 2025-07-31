@@ -275,7 +275,7 @@ function ResultsPageContent() {
           transition={{ duration: 0.6, delay: 0.6 }}
           className="text-center space-y-4"
         >
-          <div className="space-x-4">
+          <div className="flex flex-wrap justify-center gap-4">
             <Link href="/practice">
               <motion.button
                 className="cat-button text-lg px-8 py-4"
@@ -285,6 +285,19 @@ function ResultsPageContent() {
                 <span className="flex items-center space-x-2">
                   <span>🔄</span>
                   <span>Practice Again</span>
+                </span>
+              </motion.button>
+            </Link>
+            
+            <Link href="/sessions">
+              <motion.button
+                className="bg-white text-cat-success border-2 border-cat-success font-kid-friendly font-bold py-4 px-8 rounded-cat hover:bg-cat-success hover:text-white transition-all duration-200"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <span className="flex items-center space-x-2">
+                  <span>📚</span>
+                  <span>View All Sessions</span>
                 </span>
               </motion.button>
             </Link>

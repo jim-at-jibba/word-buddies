@@ -157,11 +157,73 @@ export default function Home() {
             </motion.div>
           </div>
 
+          {/* Quick Navigation */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.6 }}
+            className="mt-8"
+          >
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <Link href="/sessions">
+                <motion.div
+                  className="bg-white rounded-cat p-4 shadow-cat text-center hover:shadow-cat-hover transition-all duration-200 cursor-pointer"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="text-3xl mb-2">📚</div>
+                  <h4 className="font-kid-friendly font-bold text-cat-dark text-sm">
+                    Session History
+                  </h4>
+                </motion.div>
+              </Link>
+
+              <Link href="/word-list">
+                <motion.div
+                  className="bg-white rounded-cat p-4 shadow-cat text-center hover:shadow-cat-hover transition-all duration-200 cursor-pointer"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="text-3xl mb-2">📝</div>
+                  <h4 className="font-kid-friendly font-bold text-cat-dark text-sm">
+                    Word List
+                  </h4>
+                </motion.div>
+              </Link>
+
+              <Link href="/parents">
+                <motion.div
+                  className="bg-white rounded-cat p-4 shadow-cat text-center hover:shadow-cat-hover transition-all duration-200 cursor-pointer"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="text-3xl mb-2">👨‍👩‍👧‍👦</div>
+                  <h4 className="font-kid-friendly font-bold text-cat-dark text-sm">
+                    Parents
+                  </h4>
+                </motion.div>
+              </Link>
+
+              <Link href="/settings">
+                <motion.div
+                  className="bg-white rounded-cat p-4 shadow-cat text-center hover:shadow-cat-hover transition-all duration-200 cursor-pointer"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="text-3xl mb-2">⚙️</div>
+                  <h4 className="font-kid-friendly font-bold text-cat-dark text-sm">
+                    Settings
+                  </h4>
+                </motion.div>
+              </Link>
+            </div>
+          </motion.div>
+
           {/* Features Section */}
           <motion.div
             initial={{ opacity: 0, y: 50 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.6 }}
+            transition={{ duration: 0.6, delay: 0.8 }}
             className="mt-12"
           >
             <h3 className="text-2xl font-kid-friendly font-bold text-cat-dark text-center mb-8">
@@ -192,7 +254,7 @@ export default function Home() {
                   key={feature.title}
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: 0.8 + index * 0.1 }}
+                  transition={{ duration: 0.4, delay: 1.0 + index * 0.1 }}
                   className="bg-white rounded-cat p-6 shadow-cat text-center hover:shadow-cat-hover transition-all duration-200"
                 >
                   <div className="text-4xl mb-4">{feature.icon}</div>

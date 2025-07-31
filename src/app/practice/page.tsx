@@ -10,10 +10,11 @@ import { NotificationContainer } from '@/components/NotificationToast';
 import { AudioLoadingSpinner } from '@/components/LoadingSpinner';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import TTSStatusIndicator from '@/components/TTSStatusIndicator';
+import IOSAudioInit from '@/components/IOSAudioInit';
 import { useNotifications } from '@/hooks/useNotifications';
 import { PracticeWord, SpellingAttempt } from '@/types';
 import { checkSpelling } from '@/lib/client-utils';
-import { speakEncouragement, initializeSpeech, speakWord } from '@/lib/speech';
+import { speakEncouragement, speakWord } from '@/lib/speech';
 import { getRandomWord, updateWordStats, createSession, updateSessionDuration } from '@/lib/client-spelling-logic';
 import { logger } from '@/lib/logger';
 
@@ -44,7 +45,7 @@ export default function PracticePage() {
   const [isRetrying, setIsRetrying] = useState(false);
   const [userFirstAttempt, setUserFirstAttempt] = useState<string>('');
   const hasInitializedRef = useRef(false);
-  const speechInitializedRef = useRef(false);
+  const [audioInitialized, setAudioInitialized] = useState(false);
 
   const fetchNextWord = useCallback(async () => {
     logger.debug('fetchNextWord() called at:', new Date().toISOString());
@@ -108,11 +109,6 @@ export default function PracticePage() {
 
       // Speak encouragement
       try {
-        if (!speechInitializedRef.current) {
-          console.log('🔧 Initializing speech for mobile...');
-          await initializeSpeech();
-          speechInitializedRef.current = true;
-        }
         await speakEncouragement('correct');
       } catch (error) {
         console.error('Error speaking encouragement:', error);
@@ -168,11 +164,6 @@ export default function PracticePage() {
 
       // Speak encouragement
       try {
-        if (!speechInitializedRef.current) {
-          console.log('🔧 Initializing speech for mobile...');
-          await initializeSpeech();
-          speechInitializedRef.current = true;
-        }
         await speakEncouragement('incorrect');
       } catch (error) {
         console.error('Error speaking encouragement:', error);
@@ -195,11 +186,6 @@ export default function PracticePage() {
 
       // Speak encouragement
       try {
-        if (!speechInitializedRef.current) {
-          console.log('🔧 Initializing speech for mobile...');
-          await initializeSpeech();
-          speechInitializedRef.current = true;
-        }
         await speakEncouragement('incorrect');
       } catch (error) {
         console.error('Error speaking encouragement:', error);
@@ -296,6 +282,11 @@ export default function PracticePage() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cat-cream via-cat-light to-white">
+      {/* iOS Audio Initialization */}
+      {!audioInitialized && (
+        <IOSAudioInit onInitialized={() => setAudioInitialized(true)} />
+      )}
+      
       <div className="container mx-auto px-4 py-8">
         
         {/* Header */}

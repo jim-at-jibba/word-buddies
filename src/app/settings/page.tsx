@@ -520,14 +520,9 @@ export default function SettingsPage() {
                           Browse all {YEAR_3_WORDS.length} Year 3 and 4 spelling
                           words available for practice. Search and sort to find
                           specific words! Words sourced from{" "}
-                          <a
-                            href="https://home.oxfordowl.co.uk/"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            className="font-bold text-cat-orange hover:text-cat-dark transition-colors duration-200 underline"
-                          >
+                          <span className="font-bold text-cat-orange">
                             Oxford Owl
-                          </a>
+                          </span>
                           .
                         </p>
                       </div>

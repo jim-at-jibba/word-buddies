@@ -252,6 +252,28 @@ class BrowserDB {
     });
   }
 
+  async getAllSessions(): Promise<StoredSession[]> {
+    const db = await this.initDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['sessions'], 'readonly');
+      const store = transaction.objectStore('sessions');
+      const index = store.index('date');
+      const request = index.openCursor(null, 'prev');
+      
+      const sessions: StoredSession[] = [];
+      request.onsuccess = () => {
+        const cursor = request.result;
+        if (cursor) {
+          sessions.push(cursor.value);
+          cursor.continue();
+        } else {
+          resolve(sessions);
+        }
+      };
+      request.onerror = () => reject(request.error);
+    });
+  }
+
   // Word attempts operations
   async insertWordAttempts(attempts: StoredWordAttempt[]): Promise<void> {
     const db = await this.initDB();

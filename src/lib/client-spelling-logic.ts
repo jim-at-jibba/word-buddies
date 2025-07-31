@@ -76,9 +76,14 @@ export async function getRandomReviewWord(): Promise<PracticeWord | null> {
     await ensureInitialized();
     
     const now = Date.now();
+    const allWords = await browserDB.getAllWords();
     
-    // Get only words that need review
-    const reviewWords = await browserDB.getWordsForReview(now);
+    // Only include words that have been attempted AND need review
+    const reviewWords = allWords.filter(word => 
+      word.attempts > 0 && // Must have been attempted at least once
+      word.nextReview && // Must have a scheduled review date
+      word.nextReview <= now // Review date must be due
+    );
     
     if (reviewWords.length === 0) {
       // No words need review

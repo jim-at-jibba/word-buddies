@@ -22,7 +22,7 @@ import { logger } from '@/lib/logger';
 // Lazy load the WordPlayer component
 const WordPlayer = lazy(() => import('@/components/WordPlayer'));
 
-export default function PracticePage() {
+function PracticeContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isReviewMode = searchParams.get('mode') === 'review';
@@ -533,5 +533,27 @@ export default function PracticePage() {
       {/* Offline Indicator */}
       <OfflineIndicator />
     </div>
+  );
+}
+
+export default function PracticePage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-gradient-to-br from-cat-cream via-cat-light to-white flex items-center justify-center">
+        <div className="text-center">
+          <CatMascot mood="thinking" size="large" />
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+            className="w-8 h-8 border-4 border-cat-orange border-t-transparent rounded-full mx-auto mt-4 mb-4"
+          />
+          <p className="font-kid-friendly text-cat-gray text-lg">
+            Loading practice session...
+          </p>
+        </div>
+      </div>
+    }>
+      <PracticeContent />
+    </Suspense>
   );
 }

@@ -458,7 +458,7 @@ export default function ParentsPage() {
               <p className="font-kid-friendly text-cat-gray text-sm">
                 <strong>Open Source:</strong> This app&apos;s code is publicly available for review at{' '}
                 <a 
-                  href="https://github.com" 
+                  href="https://github.com/jim-at-jibba/word-buddies" 
                   target="_blank" 
                   rel="noopener noreferrer"
                   className="text-cat-orange hover:text-cat-dark underline"

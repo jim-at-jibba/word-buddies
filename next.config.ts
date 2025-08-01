@@ -1,8 +1,6 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  serverExternalPackages: ['better-sqlite3'],
-  
   // Turbopack has built-in support for:
   // - CSS and PostCSS (including Tailwind CSS)
   // - Modern JavaScript and TypeScript

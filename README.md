@@ -32,17 +32,12 @@ A delightful cat-themed spelling practice web application designed for Year 3 st
    npm install
    ```
 
-3. **Set up the database**
-   ```bash
-   npm run db:generate
-   ```
-
-4. **Start the development server**
+3. **Start the development server**
    ```bash
    npm run dev
    ```
 
-5. **Open your browser**
+4. **Open your browser**
    
    Navigate to [http://localhost:3000](http://localhost:3000) to see the application.
 
@@ -65,9 +60,9 @@ src/
 │   ├── ResultsCard.tsx   # Individual result display
 │   └── ProgressTracker.tsx # Progress visualization
 ├── lib/                   # Utility functions and services
-│   ├── db/               # Database schema and connection
+│   ├── storage/          # Browser storage abstraction
 │   ├── data/             # Word lists and static data
-│   ├── spelling-logic.ts  # Core spelling and learning logic
+│   ├── client-spelling-logic.ts  # Core spelling and learning logic
 │   └── speech.ts         # Text-to-speech service
 └── types/                # TypeScript type definitions
 ```
@@ -120,19 +115,11 @@ npm run build        # Build for production
 npm run start        # Start production server
 npm run lint         # Run ESLint
 
-# Database
-npm run db:generate  # Generate database migrations
-npm run db:migrate   # Run database migrations
-npm run db:studio    # Open Drizzle Studio for database inspection
+# Testing
+npm run test         # Run tests with Vitest
+npm run test:watch   # Run tests in watch mode
+npm run test:coverage # Run tests with coverage
 ```
-
-## 🗄️ Database Schema
-
-The app uses SQLite with Drizzle ORM:
-
-- **words**: Stores word list with learning statistics
-- **sessions**: Practice session records
-- **word_attempts**: Individual spelling attempts with results
 
 ## 🌐 Browser Support
 
@@ -146,9 +133,9 @@ The app uses SQLite with Drizzle ORM:
 No environment variables required for local development.
 
 ### Next.js Configuration
-- Configured for SQLite database integration
-- Optimized webpack settings for better-sqlite3
+- Turbopack enabled for fast development
 - Responsive image optimization
+- Client-side storage integration
 
 ## 📱 Responsive Breakpoints
 
@@ -170,10 +157,10 @@ No environment variables required for local development.
 ### Vercel (Recommended)
 1. Connect your repository to Vercel
 2. Deploy with default settings
-3. SQLite database will be created automatically
+3. All data is stored locally in users' browsers
 
 ### Other Platforms
-The app can be deployed to any platform supporting Node.js applications. Ensure SQLite is supported or configure an alternative database.
+The app can be deployed to any platform supporting Node.js applications. No database configuration required as the app uses client-side browser storage.
 
 ## 🧪 Testing
 

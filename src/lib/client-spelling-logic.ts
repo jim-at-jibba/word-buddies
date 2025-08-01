@@ -356,7 +356,7 @@ export async function getWordsNeedingReview(): Promise<WordWithStats[]> {
         correctAttempts: word.correctAttempts,
         lastAttempted: word.lastAttempted ? new Date(word.lastAttempted) : undefined,
         nextReview: word.nextReview ? new Date(word.nextReview) : undefined,
-        successRate: word.attempts > 0 ? word.correctAttempts / word.attempts : 0,
+        successRate: word.attempts > 0 ? Math.round((word.correctAttempts / word.attempts) * 100) : 0,
       }))
       .sort((a, b) => {
         // Sort by nextReview date (earliest first)

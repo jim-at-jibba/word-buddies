@@ -77,7 +77,7 @@ export default function ParentsPage() {
                 Welcome to Word Buddies!
               </h2>
               <p className="font-kid-friendly text-cat-gray text-lg max-w-2xl mx-auto">
-                A safe, secure spelling practice app designed for Year 3 and 4 students. 
+                A safe, secure spelling practice app designed for Years 1-4 students. 
                 Everything runs locally in your browser - no data ever leaves your device.
               </p>
             </div>
@@ -391,7 +391,7 @@ export default function ParentsPage() {
                 {
                   id: 'curriculum-alignment',
                   question: 'Does this align with school curriculum?',
-                  answer: 'Yes! Word Buddies uses Year 3 and 4 spelling words from Oxford Owl, which aligns with UK National Curriculum requirements. The spaced repetition learning method is based on educational research.'
+                  answer: 'Yes! Word Buddies uses Years 1-4 spelling words from Oxford Owl and other curriculum sources, which aligns with UK National Curriculum requirements. The spaced repetition learning method is based on educational research.'
                 },
                 {
                   id: 'costs',

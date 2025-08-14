@@ -4,7 +4,7 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "Word Buddies - Spelling Practice for Kids",
-  description: "A fun cat-themed spelling practice app for Year 3 students (ages 7-8). Learn spelling with our friendly cat mascot!",
+  description: "A fun cat-themed spelling practice app for Years 1-4 students (ages 5-9). Learn spelling with our friendly cat mascot!",
 };
 
 export default function RootLayout({

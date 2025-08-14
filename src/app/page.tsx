@@ -61,8 +61,8 @@ export default function Home() {
             </p>
           ) : null}
           <p className="text-lg md:text-xl font-kid-friendly text-cat-gray max-w-2xl mx-auto">
-            Learn spelling with our friendly cat! Perfect for Year 3 and 4
-            students (ages 7-9)
+            Learn spelling with our friendly cat! Perfect for Years 1-4
+            students (ages 5-9)
           </p>
         </motion.header>
 

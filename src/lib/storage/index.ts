@@ -1,6 +1,6 @@
 import { browserDB } from './browser-db';
 import { StoredWord, UserSettings } from './types';
-import { YEAR_3_WORDS } from '../data/words';
+import { getWordsForYearGroup, getYearGroupDisplayName } from '../data/words';
 
 let isInitialized = false;
 
@@ -12,10 +12,17 @@ export async function initializeBrowserStorage(): Promise<void> {
     const existingWords = await browserDB.getAllWords();
     
     if (existingWords.length === 0) {
-      console.log('Initializing browser storage with Year 3 words...');
+      // Get user settings to determine year group
+      const userSettings = await browserDB.getUserSettings();
+      const yearGroup = userSettings.yearGroup || 3; // Default to Year 3 & 4
+      
+      console.log(`Initializing browser storage with ${getYearGroupDisplayName(yearGroup)} words...`);
+      
+      // Get words for the selected year group
+      const wordsForYearGroup = getWordsForYearGroup(yearGroup);
       
       // Convert word list to StoredWord format
-      const wordsToInsert: StoredWord[] = YEAR_3_WORDS.map(word => ({
+      const wordsToInsert: StoredWord[] = wordsForYearGroup.map(word => ({
         word: word.toLowerCase(),
         difficulty: 1,
         attempts: 0,
@@ -24,12 +31,40 @@ export async function initializeBrowserStorage(): Promise<void> {
       }));
       
       await browserDB.insertWords(wordsToInsert);
-      console.log(`Inserted ${YEAR_3_WORDS.length} words into browser storage`);
+      console.log(`Inserted ${wordsForYearGroup.length} words into browser storage`);
     }
     
     isInitialized = true;
   } catch (error) {
     console.error('Error initializing browser storage:', error);
+    throw error;
+  }
+}
+
+// Reinitialize words for a new year group (clears existing words)
+export async function reinitializeWordsForYearGroup(yearGroup: number): Promise<void> {
+  try {
+    console.log(`Reinitializing words for ${getYearGroupDisplayName(yearGroup)}...`);
+    
+    // Clear existing words
+    await browserDB.clearWords();
+    
+    // Get words for the new year group
+    const wordsForYearGroup = getWordsForYearGroup(yearGroup);
+    
+    // Convert word list to StoredWord format
+    const wordsToInsert: StoredWord[] = wordsForYearGroup.map(word => ({
+      word: word.toLowerCase(),
+      difficulty: 1,
+      attempts: 0,
+      correctAttempts: 0,
+      createdAt: Date.now(),
+    }));
+    
+    await browserDB.insertWords(wordsToInsert);
+    console.log(`Inserted ${wordsForYearGroup.length} words for ${getYearGroupDisplayName(yearGroup)}`);
+  } catch (error) {
+    console.error('Error reinitializing words:', error);
     throw error;
   }
 }

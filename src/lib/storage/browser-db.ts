@@ -324,10 +324,15 @@ class BrowserDB {
       request.onsuccess = () => {
         const result = request.result;
         if (result) {
+          // Migration logic: Add yearGroup if missing (existing users default to Year 3)
+          if (result.yearGroup === undefined) {
+            result.yearGroup = 3;
+          }
           resolve(result);
         } else {
           // Return default settings if none exist
           const defaultSettings: UserSettings = {
+            yearGroup: 3, // Default to Year 3 & 4 for new users
             version: 1,
             lastUpdated: Date.now()
           };
@@ -381,6 +386,18 @@ class BrowserDB {
   async countWords(filter?: (word: StoredWord) => boolean): Promise<number> {
     const words = await this.getAllWords();
     return filter ? words.filter(filter).length : words.length;
+  }
+
+  async clearWords(): Promise<void> {
+    const db = await this.initDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['words'], 'readwrite');
+      const store = transaction.objectStore('words');
+      
+      const request = store.clear();
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
+    });
   }
 
   async clearAllData(): Promise<void> {

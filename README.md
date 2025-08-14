@@ -1,6 +1,6 @@
 # 🐱 Word Buddies - Spelling Practice for Kids
 
-A delightful cat-themed spelling practice web application designed for Year 3 students (ages 7-8). Built with Next.js, TypeScript, and featuring a friendly cat mascot to make learning spelling fun and engaging!
+A delightful cat-themed spelling practice web application designed for Years 1-4 students (ages 5-9). Built with Next.js, TypeScript, and featuring a friendly cat mascot to make learning spelling fun and engaging!
 
 ## ✨ Features
 
@@ -192,7 +192,7 @@ This project is created for educational purposes. Please ensure compliance with 
 
 ## 🎯 Target Audience
 
-**Primary Users**: Year 3 students (ages 7-8)
+**Primary Users**: Years 1-4 students (ages 5-9)
 **Secondary Users**: Parents, teachers, and educators
 **Use Cases**: Home learning, classroom activities, spelling practice
 

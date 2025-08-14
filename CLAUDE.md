@@ -22,7 +22,7 @@ This project uses client-side browser storage (not a traditional database), so t
 
 ## Architecture Overview
 
-Word Buddies is a **client-side spelling practice app** for Year 3 students built with Next.js 15, React 19, TypeScript, and Tailwind CSS.
+Word Buddies is a **client-side spelling practice app** for Years 1-4 students built with Next.js 15, React 19, TypeScript, and Tailwind CSS.
 
 ### Key Architecture Patterns
 

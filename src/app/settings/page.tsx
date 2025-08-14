@@ -6,9 +6,10 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import CatMascot from "@/components/CatMascot";
 import { useSettings } from "@/hooks/useSettings";
-import { YEAR_3_WORDS } from "@/lib/data/words";
+import { getWordCountForYearGroup, getYearGroupDisplayName } from "@/lib/data/words";
 import { testApiKey } from "@/lib/elevenlabs-speech";
 import { encryptApiKey, validateApiKeyFormat, isEncryptionSupported } from "@/lib/encryption";
+import { reinitializeWordsForYearGroup } from "@/lib/storage";
 
 export default function SettingsPage() {
   const router = useRouter();
@@ -24,11 +25,20 @@ export default function SettingsPage() {
   const [apiKeyTesting, setApiKeyTesting] = useState(false);
   const [apiKeyTestResult, setApiKeyTestResult] = useState<{ valid: boolean; error?: string } | null>(null);
   const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  
+  // Year group state
+  const [yearGroup, setYearGroup] = useState<number>(3);
+  const [yearGroupChanging, setYearGroupChanging] = useState(false);
 
   // Load current settings when loaded
   useEffect(() => {
     if (settings?.name) {
       setName(settings.name);
+    }
+    
+    // Load year group (default to 3 for existing users)
+    if (settings?.yearGroup !== undefined) {
+      setYearGroup(settings.yearGroup);
     }
     
     // Check if user has an API key configured
@@ -43,7 +53,10 @@ export default function SettingsPage() {
     setSaveSuccess(false);
 
     try {
-      await updateSettings({ name: name.trim() || undefined });
+      await updateSettings({ 
+        name: name.trim() || undefined,
+        yearGroup: yearGroup 
+      });
       setSaveSuccess(true);
 
       // Hide success message after 2 seconds
@@ -53,6 +66,32 @@ export default function SettingsPage() {
       setSaveError("Failed to save settings. Please try again.");
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleYearGroupChange = async (newYearGroup: number) => {
+    if (newYearGroup === yearGroup) return;
+
+    setYearGroupChanging(true);
+    setSaveError(null);
+
+    try {
+      // Update settings with new year group
+      await updateSettings({ yearGroup: newYearGroup });
+      
+      // Reinitialize words for the new year group
+      await reinitializeWordsForYearGroup(newYearGroup);
+      
+      setYearGroup(newYearGroup);
+      setSaveSuccess(true);
+      
+      // Hide success message after 3 seconds
+      setTimeout(() => setSaveSuccess(false), 3000);
+    } catch (error) {
+      console.error('Error changing year group:', error);
+      setSaveError('Failed to change year group. Please try again.');
+    } finally {
+      setYearGroupChanging(false);
     }
   };
 
@@ -281,6 +320,52 @@ export default function SettingsPage() {
                 <p className="font-kid-friendly text-cat-gray text-sm mt-2">
                   This will be used to personalize your experience!
                 </p>
+              </div>
+
+              {/* Year Group Selection */}
+              <div className="mb-6">
+                <label className="block font-kid-friendly font-bold text-cat-dark mb-3">
+                  📚 Year Group
+                </label>
+                <select
+                  value={yearGroup}
+                  onChange={(e) => handleYearGroupChange(Number(e.target.value))}
+                  disabled={yearGroupChanging}
+                  className={`w-full p-4 border-2 border-cat-light rounded-cat font-kid-friendly text-lg focus:border-cat-orange focus:outline-none transition-colors duration-200 ${
+                    yearGroupChanging ? 'opacity-50 cursor-not-allowed' : ''
+                  }`}
+                >
+                  <option value={1}>Year 1 ({getWordCountForYearGroup(1)} words)</option>
+                  <option value={2}>Year 2 ({getWordCountForYearGroup(2)} words)</option>
+                  <option value={3}>Year 3 & 4 ({getWordCountForYearGroup(3)} words)</option>
+                </select>
+                <div className="mt-2 space-y-1">
+                  <p className="font-kid-friendly text-cat-gray text-sm">
+                    Currently selected: <span className="font-bold text-cat-orange">{getYearGroupDisplayName(yearGroup)}</span>
+                  </p>
+                  <p className="font-kid-friendly text-cat-gray text-sm">
+                    ⚠️ Changing year group will reset your progress and reload all words for the new level.
+                  </p>
+                </div>
+                
+                {yearGroupChanging && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mt-3 p-3 bg-cat-cream border border-cat-light rounded-cat"
+                  >
+                    <div className="flex items-center space-x-3">
+                      <motion.div
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                        className="w-5 h-5 border-2 border-cat-orange border-t-transparent rounded-full flex-shrink-0"
+                      />
+                      <p className="font-kid-friendly text-cat-dark text-sm">
+                        Updating year group and reloading words...
+                      </p>
+                    </div>
+                  </motion.div>
+                )}
               </div>
 
               {/* ElevenLabs API Key Section */}
@@ -517,7 +602,7 @@ export default function SettingsPage() {
                           View All Words
                         </h3>
                         <p className="font-kid-friendly text-cat-gray text-sm">
-                          Browse all {YEAR_3_WORDS.length} Year 3 and 4 spelling
+                          Browse all {getWordCountForYearGroup(yearGroup)} {getYearGroupDisplayName(yearGroup)} spelling
                           words available for practice. Search and sort to find
                           specific words! Words sourced from{" "}
                           <span className="font-bold text-cat-orange">

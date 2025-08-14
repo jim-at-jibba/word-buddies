@@ -4,16 +4,21 @@ import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import CatMascot from '@/components/CatMascot';
-import { YEAR_3_WORDS } from '@/lib/data/words';
+import { getWordsForYearGroup, getYearGroupDisplayName } from '@/lib/data/words';
+import { useSettings } from '@/hooks/useSettings';
 
 export default function WordListPage() {
   const router = useRouter();
+  const { settings, loading } = useSettings();
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'alphabetical' | 'length'>('alphabetical');
 
+  const yearGroup = settings?.yearGroup || 3;
+  const wordsForYearGroup = getWordsForYearGroup(yearGroup);
+
   // Filter and sort words based on search term and sort preference
   const filteredAndSortedWords = useMemo(() => {
-    let words = YEAR_3_WORDS.filter(word =>
+    let words = wordsForYearGroup.filter(word =>
       word.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
@@ -24,11 +29,23 @@ export default function WordListPage() {
     }
 
     return words;
-  }, [searchTerm, sortBy]);
+  }, [searchTerm, sortBy, wordsForYearGroup]);
 
   const handleBackClick = () => {
     router.back();
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-cat-cream via-cat-light to-white flex items-center justify-center">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+          className="w-12 h-12 border-4 border-cat-orange border-t-transparent rounded-full"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-cat-cream via-cat-light to-white">
@@ -61,7 +78,7 @@ export default function WordListPage() {
           </div>
           
           <p className="text-lg font-kid-friendly text-cat-gray mb-2">
-            All {YEAR_3_WORDS.length} Year 3 spelling words available for practice
+            All {wordsForYearGroup.length} {getYearGroupDisplayName(yearGroup)} spelling words available for practice
           </p>
           <p className="text-sm font-kid-friendly text-cat-gray">
             Words sourced from{' '}
@@ -128,7 +145,7 @@ export default function WordListPage() {
                 <div className="text-center p-3 bg-cat-cream rounded-cat">
                   <p className="font-kid-friendly text-cat-dark">
                     <span className="font-bold text-cat-orange">{filteredAndSortedWords.length}</span>
-                    {' '}of {YEAR_3_WORDS.length} words
+                    {' '}of {wordsForYearGroup.length} words
                   </p>
                 </div>
               </div>
@@ -159,7 +176,7 @@ export default function WordListPage() {
             >
               <div className="bg-white rounded-cat-lg p-6 shadow-cat">
                 <h2 className="text-xl font-kid-friendly font-bold text-cat-dark mb-6">
-                  📝 Year 3 Spelling Words
+                  📝 {getYearGroupDisplayName(yearGroup)} Spelling Words
                 </h2>
                 
                 {filteredAndSortedWords.length > 0 ? (

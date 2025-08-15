@@ -40,7 +40,7 @@ async function getElevenLabsConfig(): Promise<ElevenLabsConfig | null> {
     }
 
     // Default voice and API URL (can be made configurable later)
-    const voiceId = '21m00Tcm4TlvDq8ikWAM'; // Rachel voice - clear and child-friendly
+    const voiceId = 'ZF6FPAbjXT4488VcRRnw'; // Updated voice ID - clear and child-friendly
     const apiUrl = 'https://api.elevenlabs.io/v1';
 
     const config = { apiKey, voiceId, apiUrl };

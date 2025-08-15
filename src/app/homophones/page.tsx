@@ -133,12 +133,10 @@ export default function HomophonesPage() {
     const trimmedInput = userInput.trim().toLowerCase();
     setIsSubmitting(true);
     
-    // Check if the user's input matches any of the homophones for this word
-    const isCorrect = currentWord.homophones.some(homophone => 
-      checkSpelling(trimmedInput, homophone.toLowerCase())
-    );
+    // Check if the user's input matches the SPECIFIC correct homophone for this context
+    const isCorrect = checkSpelling(trimmedInput, currentWord.correctHomophone.toLowerCase());
     
-    // Find which homophone they likely meant to type
+    // Store what the user actually typed
     let selectedHomophone = trimmedInput;
     if (isCorrect) {
       const matchedHomophone = currentWord.homophones.find(homophone => 
@@ -159,10 +157,23 @@ export default function HomophonesPage() {
     setWordsCompleted(prev => prev + 1);
 
     // Show feedback
+    const isHomophoneButWrong = !isCorrect && currentWord.homophones.some(h => 
+      checkSpelling(trimmedInput, h.toLowerCase())
+    );
+    
+    let message = '';
+    if (isCorrect) {
+      message = '🎉 Perfect! You chose the right homophone!';
+    } else if (isHomophoneButWrong) {
+      message = '🤔 That\'s a homophone, but not the right one for this sentence!';
+    } else {
+      message = '💪 Good try! Let\'s learn this homophone.';
+    }
+    
     setFeedback({
       show: true,
       isCorrect,
-      message: isCorrect ? '🎉 Perfect! Great job!' : '💪 Good try! Let\'s learn this one.',
+      message,
       selectedWord: selectedHomophone,
       correctWord: currentWord.correctHomophone
     });

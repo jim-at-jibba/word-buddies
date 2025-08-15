@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import CatMascot from '@/components/CatMascot';
+import SpellingInput from '@/components/SpellingInput';
 import { NotificationContainer } from '@/components/NotificationToast';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import TTSStatusIndicator from '@/components/TTSStatusIndicator';
@@ -12,6 +13,7 @@ import { useNotifications } from '@/hooks/useNotifications';
 import { useYearGroup } from '@/hooks/useSettings';
 import { HomophonePracticeWord } from '@/types';
 import { speakEncouragement, speakWord, speakText } from '@/lib/speech';
+import { checkSpelling } from '@/lib/client-utils';
 import { 
   getRandomHomophoneChallenge, 
   createHomophonesSession, 
@@ -36,7 +38,6 @@ export default function HomophonesPage() {
   const [attempts, setAttempts] = useState<HomophoneAttempt[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedHomophone, setSelectedHomophone] = useState<string>('');
   const [feedback, setFeedback] = useState<{
     show: boolean;
     isCorrect: boolean;
@@ -66,7 +67,6 @@ export default function HomophonesPage() {
   const fetchNextWord = useCallback(async () => {
     logger.debug('fetchNextWord() called for homophones');
     setIsLoading(true);
-    setSelectedHomophone('');
     setHasPlayedSentence(false);
     setIsAutoPlaying(false);
     
@@ -130,17 +130,29 @@ export default function HomophonesPage() {
     autoPlaySentence();
   }, [currentWord, isLoading, audioInitialized]);
 
-  const handleHomophoneSelect = async (selectedWord: string) => {
+  const handleHomophoneSubmit = async (userInput: string) => {
     if (!currentWord || isSubmitting) return;
 
-    setSelectedHomophone(selectedWord);
+    const trimmedInput = userInput.trim().toLowerCase();
     setIsSubmitting(true);
     
-    const isCorrect = selectedWord === currentWord.correctHomophone;
+    // Check if the user's input matches any of the homophones for this word
+    const isCorrect = currentWord.homophones.some(homophone => 
+      checkSpelling(trimmedInput, homophone.toLowerCase())
+    );
+    
+    // Find which homophone they likely meant to type
+    let selectedHomophone = trimmedInput;
+    if (isCorrect) {
+      const matchedHomophone = currentWord.homophones.find(homophone => 
+        checkSpelling(trimmedInput, homophone.toLowerCase())
+      );
+      selectedHomophone = matchedHomophone || trimmedInput;
+    }
     
     const attempt: HomophoneAttempt = {
       word: currentWord.word,
-      selectedHomophone: selectedWord,
+      selectedHomophone: selectedHomophone,
       correctHomophone: currentWord.correctHomophone,
       contextSentence: currentWord.contextSentence,
       isCorrect
@@ -154,7 +166,7 @@ export default function HomophonesPage() {
       show: true,
       isCorrect,
       message: isCorrect ? '🎉 Perfect! Great job!' : '💪 Good try! Let\'s learn this one.',
-      selectedWord,
+      selectedWord: selectedHomophone,
       correctWord: currentWord.correctHomophone
     });
 
@@ -350,10 +362,10 @@ export default function HomophonesPage() {
               >
                 <div className="text-center mb-8">
                   <h2 className="text-2xl font-kid-friendly font-bold text-cat-dark mb-4">
-                    🔄 Choose the Correct Homophone!
+                    🔄 Type the Correct Homophone!
                   </h2>
                   <p className="font-kid-friendly text-cat-gray">
-                    Listen carefully! The word and sentence will play automatically, then choose the correct spelling
+                    Listen carefully! The word and sentence will play automatically, then type the correct spelling
                   </p>
                 </div>
 
@@ -415,30 +427,17 @@ export default function HomophonesPage() {
                   </motion.div>
                 </div>
 
-                {/* Homophone Choices */}
-                <div className="space-y-3">
+                {/* Text Input */}
+                <div className="space-y-4">
                   <p className="font-kid-friendly text-cat-dark text-center font-bold">
-                    Which spelling fits the sentence?
+                    Type the correct spelling for the sentence:
                   </p>
-                  {currentWord.homophones.map((homophone, index) => (
-                    <motion.button
-                      key={homophone}
-                      onClick={() => handleHomophoneSelect(homophone)}
-                      className={`w-full p-4 rounded-cat font-kid-friendly font-bold text-lg transition-all duration-200 ${
-                        selectedHomophone === homophone
-                          ? 'bg-cat-orange text-white shadow-cat-hover'
-                          : 'bg-white hover:bg-cat-cream border-2 border-cat-gray/20 hover:border-cat-orange/50 text-cat-dark'
-                      }`}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                      disabled={isSubmitting}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1 }}
-                    >
-                      {homophone}
-                    </motion.button>
-                  ))}
+                  
+                  <SpellingInput
+                    onSubmit={handleHomophoneSubmit}
+                    disabled={isSubmitting}
+                    placeholder="Type the word you heard in the sentence..."
+                  />
                 </div>
 
                 <motion.div

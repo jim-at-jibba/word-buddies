@@ -27,16 +27,13 @@ export async function getRandomHomophoneChallenge(yearLevel: number): Promise<Ho
     const targetWordIndex = Math.floor(Math.random() * homophonePair.words.length);
     const targetWord = homophonePair.words[targetWordIndex];
     
-    // Create list of all homophones including the target word
+    // Create list of all homophones for validation
     const allHomophones = homophonePair.words.map(w => w.word);
-    
-    // Shuffle the homophones for multiple choice
-    const shuffledHomophones = shuffleArray([...allHomophones]);
     
     return {
       word: targetWord.word,
       contextSentence: targetWord.contextSentence,
-      homophones: shuffledHomophones,
+      homophones: allHomophones,
       correctHomophone: targetWord.word,
       difficulty: homophonePair.difficulty
     };
@@ -47,15 +44,6 @@ export async function getRandomHomophoneChallenge(yearLevel: number): Promise<Ho
   }
 }
 
-// Fisher-Yates shuffle algorithm
-function shuffleArray<T>(array: T[]): T[] {
-  const shuffled = [...array];
-  for (let i = shuffled.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-  }
-  return shuffled;
-}
 
 export async function createHomophonesSession(
   attempts: Array<{

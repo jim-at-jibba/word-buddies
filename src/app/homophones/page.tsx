@@ -48,6 +48,7 @@ export default function HomophonesPage() {
   const [wordsCompleted, setWordsCompleted] = useState(0);
   const [audioInitialized, setAudioInitialized] = useState(false);
   const [hasPlayedSentence, setHasPlayedSentence] = useState(false);
+  const [isAutoPlaying, setIsAutoPlaying] = useState(false);
 
   // Check if user can play homophones
   useEffect(() => {
@@ -67,6 +68,7 @@ export default function HomophonesPage() {
     setIsLoading(true);
     setSelectedHomophone('');
     setHasPlayedSentence(false);
+    setIsAutoPlaying(false);
     
     try {
       const challenge = await getRandomHomophoneChallenge(yearGroup);
@@ -100,6 +102,33 @@ export default function HomophonesPage() {
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [canPlayHomophones]);
+
+  // Auto-play sentence when new word is loaded
+  useEffect(() => {
+    const autoPlaySentence = async () => {
+      if (currentWord && !isLoading && audioInitialized) {
+        try {
+          setIsAutoPlaying(true);
+          // Small delay to ensure page is ready
+          setTimeout(async () => {
+            // First play the word
+            await speakWord(currentWord.word);
+            // Then play the sentence after a short pause
+            setTimeout(async () => {
+              await speakText(currentWord.contextSentence);
+              setHasPlayedSentence(true);
+              setIsAutoPlaying(false);
+            }, 1000);
+          }, 500);
+        } catch (error) {
+          logger.error('Error auto-playing sentence:', error);
+          setIsAutoPlaying(false);
+        }
+      }
+    };
+
+    autoPlaySentence();
+  }, [currentWord, isLoading, audioInitialized]);
 
   const handleHomophoneSelect = async (selectedWord: string) => {
     if (!currentWord || isSubmitting) return;
@@ -324,9 +353,25 @@ export default function HomophonesPage() {
                     🔄 Choose the Correct Homophone!
                   </h2>
                   <p className="font-kid-friendly text-cat-gray">
-                    Listen to the word and sentence, then select the correct spelling
+                    Listen carefully! The word and sentence will play automatically, then choose the correct spelling
                   </p>
                 </div>
+
+                {/* Auto-play indicator */}
+                {isAutoPlaying && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="mb-4 flex items-center justify-center space-x-2 bg-cat-success/20 text-cat-success px-4 py-2 rounded-cat"
+                  >
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                      className="w-4 h-4 border-2 border-cat-success border-t-transparent rounded-full"
+                    />
+                    <span className="font-kid-friendly text-sm">Playing audio automatically...</span>
+                  </motion.div>
+                )}
 
                 {/* Audio Controls */}
                 <div className="mb-8 space-y-4">
@@ -340,7 +385,7 @@ export default function HomophonesPage() {
                     >
                       <span className="flex items-center space-x-2">
                         <span>🔊</span>
-                        <span>Play Word</span>
+                        <span>Replay Word</span>
                       </span>
                     </motion.button>
                     
@@ -353,7 +398,7 @@ export default function HomophonesPage() {
                     >
                       <span className="flex items-center space-x-2">
                         <span>📝</span>
-                        <span>Play Sentence</span>
+                        <span>Replay Sentence</span>
                       </span>
                     </motion.button>
                   </div>
@@ -403,7 +448,7 @@ export default function HomophonesPage() {
                   className="mt-6 p-4 bg-cat-cream rounded-cat border-2 border-cat-success/30"
                 >
                   <p className="font-kid-friendly text-cat-gray text-center text-sm">
-                    💡 Listen carefully to both the word and sentence to pick the right homophone!
+                    💡 The audio plays automatically! Use the replay buttons if you need to hear it again.
                   </p>
                 </motion.div>
               </motion.div>

@@ -105,6 +105,7 @@ class BrowserDB {
       const store = transaction.objectStore('words');
 
       let completed = 0;
+      let errors = 0;
       const total = words.length;
 
       if (total === 0) {
@@ -112,13 +113,34 @@ class BrowserDB {
         return;
       }
 
+      transaction.oncomplete = () => {
+        resolve();
+      };
+
+      transaction.onerror = () => {
+        reject(transaction.error);
+      };
+
       words.forEach(word => {
         const request = store.add(word);
         request.onsuccess = () => {
           completed++;
-          if (completed === total) resolve();
         };
-        request.onerror = () => reject(request.error);
+        request.onerror = (event) => {
+          // Prevent the transaction from aborting on constraint errors
+          event.preventDefault();
+          
+          const error = request.error;
+          if (error && error.name === 'ConstraintError') {
+            // Count as completed (skip duplicate)
+            errors++;
+            completed++;
+          } else {
+            // For non-constraint errors, still prevent abort but track the error
+            errors++;
+            completed++;
+          }
+        };
       });
     });
   }

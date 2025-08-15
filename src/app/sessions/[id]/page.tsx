@@ -243,13 +243,21 @@ function SessionDetailContent() {
           
           {spellingAttempts.length > 0 ? (
             <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {spellingAttempts.map((attempt, index) => (
-                <SessionDetailCard 
-                  key={`${attempt.word}-${index}`}
-                  attempt={attempt} 
-                  index={index}
-                />
-              ))}
+              {spellingAttempts.map((attempt, index) => {
+                // Use word attempt ID if available, otherwise use createdAt timestamp for uniqueness
+                const originalAttempt = wordAttempts[index];
+                const uniqueKey = originalAttempt.id 
+                  ? `attempt-${originalAttempt.id}` 
+                  : `${attempt.word}-${originalAttempt.createdAt}`;
+                
+                return (
+                  <SessionDetailCard 
+                    key={uniqueKey}
+                    attempt={attempt} 
+                    index={index}
+                  />
+                );
+              })}
             </div>
           ) : (
             <div className="text-center py-8">

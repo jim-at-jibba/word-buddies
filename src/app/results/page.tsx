@@ -8,6 +8,7 @@ import CatMascot from '@/components/CatMascot';
 import { SessionResult } from '@/types';
 import { speakEncouragement, initializeSpeech } from '@/lib/speech';
 import { getSessionById } from '@/lib/client-spelling-logic';
+import { getHomophonesSessionById } from '@/lib/client-homophones-logic';
 import { logger } from '@/lib/logger';
 
 // Lazy load the ResultsCard component
@@ -17,6 +18,7 @@ function ResultsPageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const sessionId = searchParams.get('sessionId');
+  const gameType = searchParams.get('gameType') as 'spelling' | 'homophones' || 'spelling';
   
   const [sessionResult, setSessionResult] = useState<SessionResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -29,7 +31,13 @@ function ResultsPageContent() {
         return;
       }
       
-      const sessionResult = await getSessionById(sessionId);
+      let sessionResult: SessionResult | null = null;
+      
+      if (gameType === 'homophones') {
+        sessionResult = await getHomophonesSessionById(sessionId);
+      } else {
+        sessionResult = await getSessionById(sessionId);
+      }
       
       if (sessionResult) {
         setSessionResult(sessionResult);
@@ -43,7 +51,7 @@ function ResultsPageContent() {
     } finally {
       setLoading(false);
     }
-  }, [sessionId, router]);
+  }, [sessionId, gameType, router]);
 
   const speakCelebration = useCallback(async () => {
     if (!sessionResult) return;
@@ -168,10 +176,13 @@ function ResultsPageContent() {
           className="text-center mb-8"
         >
           <h1 className="text-3xl md:text-4xl font-kid-friendly font-bold text-cat-dark mb-2">
-            🎉 Practice Complete!
+            {sessionResult?.gameType === 'homophones' ? '🔄 Homophones Complete!' : '🎉 Practice Complete!'}
           </h1>
           <p className="font-kid-friendly text-cat-gray">
-            Here&apos;s how you did in this session
+            {sessionResult?.gameType === 'homophones' 
+              ? "Here's how you did with homophones!" 
+              : "Here's how you did in this session"
+            }
           </p>
         </motion.div>
 

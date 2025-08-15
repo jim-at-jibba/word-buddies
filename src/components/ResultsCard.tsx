@@ -10,7 +10,8 @@ interface ResultsCardProps {
 }
 
 const ResultsCard = memo(function ResultsCard({ attempt, index }: ResultsCardProps) {
-  const { word, userSpelling, isCorrect } = attempt;
+  const { word, userSpelling, isCorrect, gameType, contextSentence, selectedHomophone, correctHomophone } = attempt;
+  const isHomophones = gameType === 'homophones';
 
   return (
     <motion.div
@@ -45,14 +46,37 @@ const ResultsCard = memo(function ResultsCard({ attempt, index }: ResultsCardPro
             Word: <span className="text-cat-orange">{word}</span>
           </p>
           
-          <p className="font-kid-friendly text-md">
-            You typed: 
-            <span className={`ml-2 font-bold ${
-              isCorrect ? 'text-cat-success' : 'text-cat-error'
-            }`}>
-              {userSpelling}
-            </span>
-          </p>
+          {isHomophones ? (
+            <>
+              {contextSentence && (
+                <p className="font-kid-friendly text-sm text-cat-gray italic mb-2">
+                  &ldquo;{contextSentence}&rdquo;
+                </p>
+              )}
+              <p className="font-kid-friendly text-md">
+                You selected: 
+                <span className={`ml-2 font-bold ${
+                  isCorrect ? 'text-cat-success' : 'text-cat-error'
+                }`}>
+                  {selectedHomophone || userSpelling}
+                </span>
+              </p>
+              {!isCorrect && correctHomophone && (
+                <p className="font-kid-friendly text-sm text-cat-gray">
+                  Correct: <span className="font-bold text-cat-success">{correctHomophone}</span>
+                </p>
+              )}
+            </>
+          ) : (
+            <p className="font-kid-friendly text-md">
+              You typed: 
+              <span className={`ml-2 font-bold ${
+                isCorrect ? 'text-cat-success' : 'text-cat-error'
+              }`}>
+                {userSpelling}
+              </span>
+            </p>
+          )}
         </div>
 
         {/* Feedback Message */}
@@ -69,7 +93,7 @@ const ResultsCard = memo(function ResultsCard({ attempt, index }: ResultsCardPro
           {isCorrect ? (
             <span className="flex items-center justify-center space-x-1">
               <span>🎉</span>
-              <span>Perfect!</span>
+              <span>{isHomophones ? 'Perfect match!' : 'Perfect!'}</span>
             </span>
           ) : (
             <div className="space-y-1">
@@ -77,7 +101,7 @@ const ResultsCard = memo(function ResultsCard({ attempt, index }: ResultsCardPro
                 <span>💪</span>
                 <span>Good try!</span>
               </p>
-              {word !== userSpelling && (
+              {!isHomophones && word !== userSpelling && (
                 <p className="text-xs">
                   Correct spelling: <span className="font-bold">{word}</span>
                 </p>

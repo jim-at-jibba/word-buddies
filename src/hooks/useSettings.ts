@@ -70,3 +70,20 @@ export function useUserName() {
     updateName
   };
 }
+
+// Convenience hook for getting year group
+export function useYearGroup() {
+  const { settings, loading, updateSettings, error } = useSettings();
+  
+  const updateYearGroup = useCallback(async (yearGroup: number) => {
+    await updateSettings({ yearGroup });
+  }, [updateSettings]);
+
+  return {
+    yearGroup: settings?.yearGroup || 3, // Default to Year 3
+    loading,
+    error,
+    updateYearGroup,
+    canPlayHomophones: (settings?.yearGroup || 3) >= 3 // Only Year 3+ can play homophones
+  };
+}

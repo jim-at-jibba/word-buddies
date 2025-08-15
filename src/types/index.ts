@@ -11,6 +11,10 @@ export interface SpellingAttempt {
   userSpelling: string;
   isCorrect: boolean;
   attempts: number;
+  gameType?: 'spelling' | 'homophones';
+  contextSentence?: string;
+  correctHomophone?: string;
+  selectedHomophone?: string;
 }
 
 export interface WordWithStats {
@@ -44,6 +48,15 @@ export interface SessionResult {
   duration: number;
   attempts: SpellingAttempt[];
   celebrationLevel: 'great' | 'good' | 'keep-trying';
+  gameType?: 'spelling' | 'homophones';
+}
+
+export interface HomophonePracticeWord {
+  word: string;
+  contextSentence: string;
+  homophones: string[];
+  correctHomophone: string;
+  difficulty: number;
 }
 
 export interface ProgressStats {

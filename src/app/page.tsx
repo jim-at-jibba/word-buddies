@@ -6,7 +6,7 @@ import Link from "next/link";
 import CatMascot from "@/components/CatMascot";
 import { ProgressStats } from "@/types";
 import { getProgressStats } from "@/lib/client-spelling-logic";
-import { useUserName } from "@/hooks/useSettings";
+import { useUserName, useYearGroup } from "@/hooks/useSettings";
 
 // Lazy load the ProgressTracker component
 const ProgressTracker = lazy(() => import("@/components/ProgressTracker"));
@@ -17,6 +17,7 @@ export default function Home() {
   );
   const [loading, setLoading] = useState(true);
   const { name } = useUserName();
+  const { canPlayHomophones } = useYearGroup();
 
   useEffect(() => {
     fetchProgressStats();
@@ -87,22 +88,42 @@ export default function Home() {
               </h2>
 
               <p className="font-kid-friendly text-cat-gray mb-6">
-                Click below to start your spelling adventure! I&apos;ll help you
+                Choose a game to start your learning adventure! I&apos;ll help you
                 learn new words and practice the ones you already know.
               </p>
 
-              <Link href="/practice">
-                <motion.button
-                  className="cat-button text-xl px-8 py-4 w-full"
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <span className="flex items-center justify-center space-x-2">
-                    <span>🚀</span>
-                    <span>Start Practicing</span>
-                  </span>
-                </motion.button>
-              </Link>
+              <div className="space-y-4">
+                <Link href="/practice">
+                  <motion.button
+                    className="cat-button text-xl px-8 py-4 w-full"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span className="flex items-center justify-center space-x-2">
+                      <span>✏️</span>
+                      <span>Spelling Practice</span>
+                    </span>
+                  </motion.button>
+                </Link>
+
+                {canPlayHomophones && (
+                  <Link href="/homophones">
+                    <motion.button
+                      className="bg-cat-success hover:bg-cat-success/90 text-white font-bold py-4 px-8 rounded-cat shadow-cat hover:shadow-cat-hover transition-all duration-200 text-xl w-full"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                    >
+                      <span className="flex items-center justify-center space-x-2">
+                        <span>🔄</span>
+                        <span>Homophones Game</span>
+                        <span className="text-sm bg-white text-cat-success px-2 py-1 rounded-full ml-2 font-kid-friendly">
+                          Year 3+
+                        </span>
+                      </span>
+                    </motion.button>
+                  </Link>
+                )}
+              </div>
             </motion.div>
 
             {/* Progress Section */}

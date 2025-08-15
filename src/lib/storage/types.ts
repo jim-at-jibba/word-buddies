@@ -16,6 +16,7 @@ export interface StoredSession {
   correctWords: number;
   score: number;
   duration: number;
+  gameType?: 'spelling' | 'homophones'; // Type of game played
 }
 
 export interface StoredWordAttempt {
@@ -26,6 +27,10 @@ export interface StoredWordAttempt {
   isCorrect: boolean;
   attempts: number;
   createdAt: number; // timestamp
+  gameType?: 'spelling' | 'homophones'; // Type of game
+  contextSentence?: string; // For homophones game
+  correctHomophone?: string; // For homophones game
+  selectedHomophone?: string; // For homophones game
 }
 
 export interface UserSettings {

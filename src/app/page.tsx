@@ -109,7 +109,7 @@ export default function Home() {
                 {canPlayHomophones && (
                   <Link href="/homophones">
                     <motion.button
-                      className="bg-cat-success hover:bg-cat-success/90 text-white font-bold py-4 px-8 rounded-cat shadow-cat hover:shadow-cat-hover transition-all duration-200 text-xl w-full"
+                      className="bg-cat-success hover:bg-cat-success/90 text-white font-bold py-4 px-8 rounded-cat shadow-cat hover:shadow-cat-hover transition-all duration-200 text-xl w-full mt-2"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >

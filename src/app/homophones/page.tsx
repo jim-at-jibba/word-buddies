@@ -48,7 +48,6 @@ export default function HomophonesPage() {
   const [sessionStartTime, setSessionStartTime] = useState<Date>(new Date());
   const [wordsCompleted, setWordsCompleted] = useState(0);
   const [audioInitialized, setAudioInitialized] = useState(false);
-  const [hasPlayedSentence, setHasPlayedSentence] = useState(false);
   const [isAutoPlaying, setIsAutoPlaying] = useState(false);
 
   // Check if user can play homophones
@@ -67,7 +66,6 @@ export default function HomophonesPage() {
   const fetchNextWord = useCallback(async () => {
     logger.debug('fetchNextWord() called for homophones');
     setIsLoading(true);
-    setHasPlayedSentence(false);
     setIsAutoPlaying(false);
     
     try {
@@ -116,7 +114,6 @@ export default function HomophonesPage() {
             // Then play the sentence after a short pause
             setTimeout(async () => {
               await speakText(currentWord.contextSentence);
-              setHasPlayedSentence(true);
               setIsAutoPlaying(false);
             }, 1000);
           }, 500);
@@ -226,7 +223,6 @@ export default function HomophonesPage() {
     if (!currentWord) return;
     try {
       await speakText(currentWord.contextSentence);
-      setHasPlayedSentence(true);
     } catch (error) {
       logger.error('Error playing sentence audio:', error);
     }
@@ -415,28 +411,18 @@ export default function HomophonesPage() {
                     </motion.button>
                   </div>
 
-                  {/* Context Sentence Display */}
-                  <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: hasPlayedSentence ? 1 : 0.5 }}
-                    className="bg-cat-cream rounded-cat p-4 border-2 border-cat-orange/30"
-                  >
-                    <p className="font-kid-friendly text-cat-dark text-center text-lg">
-                      &ldquo;{currentWord.contextSentence}&rdquo;
-                    </p>
-                  </motion.div>
                 </div>
 
                 {/* Text Input */}
                 <div className="space-y-4">
                   <p className="font-kid-friendly text-cat-dark text-center font-bold">
-                    Type the correct spelling for the sentence:
+                    Type the correct spelling of the word you heard:
                   </p>
                   
                   <SpellingInput
                     onSubmit={handleHomophoneSubmit}
                     disabled={isSubmitting}
-                    placeholder="Type the word you heard in the sentence..."
+                    placeholder="Type the word you heard..."
                   />
                 </div>
 
@@ -447,7 +433,7 @@ export default function HomophonesPage() {
                   className="mt-6 p-4 bg-cat-cream rounded-cat border-2 border-cat-success/30"
                 >
                   <p className="font-kid-friendly text-cat-gray text-center text-sm">
-                    💡 The audio plays automatically! Use the replay buttons if you need to hear it again.
+                    💡 Listen carefully! The word and sentence will help you choose the right spelling.
                   </p>
                 </motion.div>
               </motion.div>

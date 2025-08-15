@@ -287,7 +287,7 @@ function ResultsPageContent() {
           className="text-center space-y-4"
         >
           <div className="flex flex-wrap justify-center gap-4">
-            <Link href="/practice">
+            <Link href={sessionResult?.gameType === 'homophones' ? '/homophones' : '/practice'}>
               <motion.button
                 className="cat-button text-lg px-8 py-4"
                 whileHover={{ scale: 1.05 }}
@@ -295,7 +295,9 @@ function ResultsPageContent() {
               >
                 <span className="flex items-center space-x-2">
                   <span>🔄</span>
-                  <span>Practice Again</span>
+                  <span>
+                    {sessionResult?.gameType === 'homophones' ? 'Play Homophones Again' : 'Practice Again'}
+                  </span>
                 </span>
               </motion.button>
             </Link>

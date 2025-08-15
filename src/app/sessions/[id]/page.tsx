@@ -103,7 +103,11 @@ function SessionDetailContent() {
     word: attempt.word,
     userSpelling: attempt.userSpelling,
     isCorrect: attempt.isCorrect,
-    attempts: attempt.attempts
+    attempts: attempt.attempts,
+    gameType: attempt.gameType,
+    contextSentence: attempt.contextSentence,
+    correctHomophone: attempt.correctHomophone,
+    selectedHomophone: attempt.selectedHomophone
   }));
 
   const getCelebrationMessage = (score: number) => {
@@ -162,7 +166,7 @@ function SessionDetailContent() {
           className="text-center mb-8"
         >
           <h1 className="text-3xl md:text-4xl font-kid-friendly font-bold text-cat-dark mb-2">
-            📝 Session Details
+            {session.gameType === 'homophones' ? '🔄 Homophones Session' : '📝 Spelling Session'}
           </h1>
           <p className="font-kid-friendly text-cat-gray">
             {formatDateTime(session.date)}
@@ -190,13 +194,30 @@ function SessionDetailContent() {
             </div>
 
             {/* Stats Grid */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
               <div className="bg-cat-success/20 rounded-cat p-4 text-center">
                 <div className="text-2xl font-bold text-cat-success font-kid-friendly">
                   {session.score}%
                 </div>
                 <div className="text-sm text-cat-gray font-kid-friendly">
                   Score
+                </div>
+              </div>
+              
+              <div className={`rounded-cat p-4 text-center ${
+                session.gameType === 'homophones' 
+                  ? 'bg-cat-success/20' 
+                  : 'bg-cat-orange/20'
+              }`}>
+                <div className={`text-2xl font-bold font-kid-friendly ${
+                  session.gameType === 'homophones' 
+                    ? 'text-cat-success' 
+                    : 'text-cat-orange'
+                }`}>
+                  {session.gameType === 'homophones' ? '🔄' : '✏️'}
+                </div>
+                <div className="text-sm text-cat-gray font-kid-friendly">
+                  {session.gameType === 'homophones' ? 'Homophones' : 'Spelling'}
                 </div>
               </div>
               

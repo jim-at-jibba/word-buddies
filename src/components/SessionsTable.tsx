@@ -167,6 +167,9 @@ export default function SessionsTable({ sessions }: SessionsTableProps) {
                 </button>
               </th>
               <th className="text-left p-4 font-kid-friendly font-bold text-cat-dark">
+                Game Type
+              </th>
+              <th className="text-left p-4 font-kid-friendly font-bold text-cat-dark">
                 <button
                   onClick={() => handleSort('wordsAttempted')}
                   className="flex items-center space-x-2 hover:text-cat-orange transition-colors"
@@ -211,6 +214,18 @@ export default function SessionsTable({ sessions }: SessionsTableProps) {
                     <span>{getScoreEmoji(session.score)}</span>
                     <span className="font-kid-friendly font-bold">
                       {session.score}%
+                    </span>
+                  </div>
+                </td>
+                <td className="p-4 font-kid-friendly text-cat-dark">
+                  <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-cat ${
+                    session.gameType === 'homophones' 
+                      ? 'bg-cat-success/20 text-cat-success' 
+                      : 'bg-cat-orange/20 text-cat-orange'
+                  }`}>
+                    <span>{session.gameType === 'homophones' ? '🔄' : '✏️'}</span>
+                    <span className="font-semibold">
+                      {session.gameType === 'homophones' ? 'Homophones' : 'Spelling'}
                     </span>
                   </div>
                 </td>
@@ -261,7 +276,20 @@ export default function SessionsTable({ sessions }: SessionsTableProps) {
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="grid grid-cols-3 gap-4 mb-4">
+              <div>
+                <div className="text-sm font-kid-friendly text-cat-gray">Game Type</div>
+                <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded text-xs ${
+                  session.gameType === 'homophones' 
+                    ? 'bg-cat-success/20 text-cat-success' 
+                    : 'bg-cat-orange/20 text-cat-orange'
+                }`}>
+                  <span>{session.gameType === 'homophones' ? '🔄' : '✏️'}</span>
+                  <span className="font-semibold">
+                    {session.gameType === 'homophones' ? 'Homophones' : 'Spelling'}
+                  </span>
+                </div>
+              </div>
               <div>
                 <div className="text-sm font-kid-friendly text-cat-gray">Words</div>
                 <div className="font-kid-friendly font-semibold text-cat-dark">

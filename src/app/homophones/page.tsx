@@ -154,7 +154,8 @@ export default function HomophonesPage() {
       setFeedback({
         show: true,
         isCorrect: true,
-        message: attemptNumber === 1 ? '🎉 Perfect! You chose the right homophone!' : '🎉 Great job on the retry!'
+        message: attemptNumber === 1 ? '🎉 Perfect! You chose the right homophone!' : '🎉 Great job on the retry!',
+        selectedWord: trimmedInput
       });
 
       // Speak encouragement

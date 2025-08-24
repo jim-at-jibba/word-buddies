@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import CatMascot from '@/components/CatMascot';
-import SpellingInput from '@/components/SpellingInput';
+import SpellingInput, { SpellingInputRef } from '@/components/SpellingInput';
 import { NotificationContainer } from '@/components/NotificationToast';
 import OfflineIndicator from '@/components/OfflineIndicator';
 import TTSStatusIndicator from '@/components/TTSStatusIndicator';
@@ -54,6 +54,7 @@ export default function HomophonesPage() {
   const [currentWordAttemptCount, setCurrentWordAttemptCount] = useState(0);
   const [isRetrying, setIsRetrying] = useState(false);
   const [userFirstAttempt, setUserFirstAttempt] = useState<string>('');
+  const spellingInputRef = useRef<SpellingInputRef>(null);
 
   // Check if user can play homophones
   useEffect(() => {
@@ -308,6 +309,8 @@ export default function HomophonesPage() {
     if (!currentWord) return;
     try {
       await speakWord(currentWord.word);
+      // Focus input after audio completes
+      spellingInputRef.current?.focusInput();
     } catch (error) {
       logger.error('Error playing word audio:', error);
     }
@@ -317,6 +320,8 @@ export default function HomophonesPage() {
     if (!currentWord) return;
     try {
       await speakText(currentWord.contextSentence);
+      // Focus input after audio completes
+      spellingInputRef.current?.focusInput();
     } catch (error) {
       logger.error('Error playing sentence audio:', error);
     }
@@ -505,6 +510,7 @@ export default function HomophonesPage() {
                   </p>
                   
                   <SpellingInput
+                    ref={spellingInputRef}
                     onSubmit={handleHomophoneSubmit}
                     disabled={isSubmitting}
                     placeholder="Try again..."
@@ -594,6 +600,7 @@ export default function HomophonesPage() {
                   </p>
                   
                   <SpellingInput
+                    ref={spellingInputRef}
                     onSubmit={handleHomophoneSubmit}
                     disabled={isSubmitting}
                     placeholder="Type the word you heard..."

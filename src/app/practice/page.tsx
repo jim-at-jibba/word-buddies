@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef, useCallback, lazy, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useRouter, useSearchParams } from 'next/navigation';
-import SpellingInput from '@/components/SpellingInput';
+import SpellingInput, { SpellingInputRef } from '@/components/SpellingInput';
 import CatMascot from '@/components/CatMascot';
 import TTSErrorBoundary from '@/components/TTSErrorBoundary';
 import { NotificationContainer } from '@/components/NotificationToast';
@@ -49,6 +49,7 @@ function PracticeContent() {
   const [userFirstAttempt, setUserFirstAttempt] = useState<string>('');
   const hasInitializedRef = useRef(false);
   const [audioInitialized, setAudioInitialized] = useState(false);
+  const spellingInputRef = useRef<SpellingInputRef>(null);
 
   const fetchNextWord = useCallback(async () => {
     logger.debug('fetchNextWord() called at:', new Date().toISOString());
@@ -421,6 +422,7 @@ function PracticeContent() {
                       word={currentWord.word}
                       autoPlay={true}
                       className="mb-8"
+                      onPlayComplete={() => spellingInputRef.current?.focusInput()}
                     />
                   </Suspense>
                 </TTSErrorBoundary>
@@ -440,6 +442,7 @@ function PracticeContent() {
                 </motion.div>
 
                 <SpellingInput
+                  ref={spellingInputRef}
                   onSubmit={handleSpellingSubmit}
                   disabled={isSubmitting}
                   placeholder="Try spelling the word again..."
@@ -483,11 +486,13 @@ function PracticeContent() {
                       word={currentWord.word}
                       autoPlay={true}
                       className="mb-8"
+                      onPlayComplete={() => spellingInputRef.current?.focusInput()}
                     />
                   </Suspense>
                 </TTSErrorBoundary>
 
                 <SpellingInput
+                  ref={spellingInputRef}
                   onSubmit={handleSpellingSubmit}
                   disabled={isSubmitting}
                   placeholder="Type the word you heard..."

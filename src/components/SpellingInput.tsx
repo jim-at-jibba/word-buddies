@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect, memo } from 'react';
+import { useState, useRef, useEffect, memo, forwardRef, useImperativeHandle } from 'react';
 import { motion } from 'framer-motion';
 
 interface SpellingInputProps {
@@ -11,16 +11,29 @@ interface SpellingInputProps {
   className?: string;
 }
 
-const SpellingInput = memo(function SpellingInput({
+export interface SpellingInputRef {
+  focusInput: () => void;
+}
+
+const SpellingInput = memo(forwardRef<SpellingInputRef, SpellingInputProps>(function SpellingInput({
   onSubmit,
   disabled = false,
   placeholder = "Type the word here...",
   maxLength = 20,
   className = ''
-}: SpellingInputProps) {
+}: SpellingInputProps, ref) {
   const [value, setValue] = useState('');
   const [isShaking, setIsShaking] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Expose focusInput method to parent components
+  useImperativeHandle(ref, () => ({
+    focusInput: () => {
+      if (inputRef.current && !disabled) {
+        inputRef.current.focus();
+      }
+    }
+  }), [disabled]);
 
   useEffect(() => {
     // Focus input when component mounts
@@ -61,7 +74,7 @@ const SpellingInput = memo(function SpellingInput({
             type="text"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            onKeyPress={handleKeyPress}
+            onKeyDown={handleKeyPress}
             disabled={disabled}
             placeholder={placeholder}
             maxLength={maxLength}
@@ -131,6 +144,6 @@ const SpellingInput = memo(function SpellingInput({
       )}
     </div>
   );
-});
+}));
 
 export default SpellingInput;

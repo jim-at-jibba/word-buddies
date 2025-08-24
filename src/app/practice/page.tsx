@@ -316,7 +316,7 @@ function PracticeContent() {
           <div className="flex flex-col items-center space-y-2">
             <div className="bg-white rounded-full px-4 py-2 shadow-cat">
               <p className="font-kid-friendly text-cat-dark">
-                Word {wordsCompleted + 1} of 5
+                Word {Math.min(wordsCompleted + 1, 5)} of 5
               </p>
             </div>
             {isReviewMode && <ReviewModeIndicator />}
@@ -329,7 +329,7 @@ function PracticeContent() {
           <div className="w-full bg-cat-gray/20 rounded-full h-2">
             <motion.div
               initial={{ width: 0 }}
-              animate={{ width: `${((wordsCompleted + 1) / 5) * 100}%` }}
+              animate={{ width: `${(Math.min(wordsCompleted + 1, 5) / 5) * 100}%` }}
               className="bg-cat-orange h-2 rounded-full"
               transition={{ duration: 0.5 }}
             />

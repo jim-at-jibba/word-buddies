@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { memo } from 'react';
+import Image from 'next/image';
 
 interface CatMascotProps {
   mood?: 'happy' | 'excited' | 'encouraging' | 'thinking';
@@ -63,13 +64,14 @@ const CatMascot = memo(function CatMascot({
   const renderCat = () => {
     return (
       <div className={`${sizeClasses[size]} ${className} relative`} aria-label={`Cat mascot in ${mood} mood`} role="img">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <Image
           src="/wednesday.png"
-            alt={`Cat mascot showing ${mood} mood`}
-            draggable={false}
-            className="absolute inset-0 w-full h-full object-cover rounded-full shadow-md select-none"
-            sizes="(max-width: 640px) 96px, 128px"
+          alt={`Cat mascot showing ${mood} mood`}
+          draggable={false}
+          fill
+          priority={size === 'large'}
+          className="object-cover rounded-full shadow-md select-none"
+          sizes="(max-width: 640px) 128px, 160px"
         />
         {mood === 'thinking' && (
           <div className="absolute -top-2 -right-2 flex flex-col items-center">

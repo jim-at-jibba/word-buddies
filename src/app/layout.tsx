@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ErrorBoundary from "@/components/ErrorBoundary";
+import ClientLayout from "@/components/ClientLayout";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -17,7 +18,7 @@ export default function RootLayout({
       <body className="antialiased">
         <ErrorBoundary>
           <div className="relative min-h-screen">
-            {children}
+            <ClientLayout>{children}</ClientLayout>
           </div>
         </ErrorBoundary>
       </body>

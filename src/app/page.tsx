@@ -4,11 +4,11 @@ import { useState, useEffect, lazy, Suspense } from "react";
 import { motion } from "framer-motion";
 import Link from "next/link";
 import CatMascot from "@/components/CatMascot";
+import TimerConfig from "@/components/TimerConfig";
 import { ProgressStats } from "@/types";
 import { getProgressStats } from "@/lib/client-spelling-logic";
 import { useUserName, useYearGroup } from "@/hooks/useSettings";
 
-// Lazy load the ProgressTracker component
 const ProgressTracker = lazy(() => import("@/components/ProgressTracker"));
 
 export default function Home() {
@@ -177,6 +177,16 @@ export default function Home() {
               )}
             </motion.div>
           </div>
+
+          {/* Timer Configuration */}
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, delay: 0.5 }}
+            className="mt-8"
+          >
+            <TimerConfig />
+          </motion.div>
 
           {/* Quick Navigation */}
           <motion.div

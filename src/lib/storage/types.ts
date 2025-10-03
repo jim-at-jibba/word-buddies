@@ -37,6 +37,9 @@ export interface UserSettings {
   name?: string;
   elevenLabsApiKey?: string; // Encrypted ElevenLabs API key for premium TTS
   yearGroup?: number; // 1 = Year 1, 2 = Year 2, 3 = Year 3 & 4 (default: 3)
+  timerDuration?: number; // Timer duration in minutes
+  timerStartTime?: number; // Timer start timestamp
+  timerIsActive?: boolean; // Whether timer is currently active
   version: number;
   lastUpdated: number;
 }

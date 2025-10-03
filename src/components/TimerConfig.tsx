@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useTimer } from '@/hooks/useTimer';
 
 const TIMER_PRESETS = [5, 10, 15, 20];
@@ -8,17 +8,17 @@ const TIMER_PRESETS = [5, 10, 15, 20];
 export default function TimerConfig() {
   const { isActive, startTimer } = useTimer();
 
-  if (isActive) {
-    return null;
-  }
-
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="bg-white rounded-cat-lg p-6 shadow-cat"
-    >
+    <AnimatePresence mode="wait">
+      {!isActive && (
+        <motion.div
+          key="timer-config"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+          transition={{ duration: 0.5 }}
+          className="bg-white rounded-cat-lg p-6 shadow-cat"
+        >
       <div className="text-center mb-4">
         <h3 className="text-xl font-kid-friendly font-bold text-cat-dark mb-2">
           ⏰ Set Practice Timer
@@ -44,6 +44,8 @@ export default function TimerConfig() {
           </motion.button>
         ))}
       </div>
-    </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

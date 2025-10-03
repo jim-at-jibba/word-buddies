@@ -4,9 +4,11 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useTimer } from '@/hooks/useTimer';
 
 const TIMER_PRESETS = [5, 10, 15, 20];
+const DEV_TIMER = 10 / 60;
 
 export default function TimerConfig() {
   const { isActive, startTimer } = useTimer();
+  const isDev = process.env.NODE_ENV === 'development';
 
   return (
     <AnimatePresence mode="wait">
@@ -29,6 +31,19 @@ export default function TimerConfig() {
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {isDev && (
+          <motion.button
+            onClick={() => startTimer(DEV_TIMER)}
+            className="bg-cat-warning hover:bg-cat-warning/90 text-white font-bold py-3 px-4 rounded-cat shadow-cat hover:shadow-cat-hover transition-all duration-200"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+          >
+            <div className="font-kid-friendly">
+              <div className="text-2xl">10s</div>
+              <div className="text-xs">dev</div>
+            </div>
+          </motion.button>
+        )}
         {TIMER_PRESETS.map((minutes) => (
           <motion.button
             key={minutes}

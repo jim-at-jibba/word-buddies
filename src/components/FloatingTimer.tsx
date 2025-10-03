@@ -7,18 +7,24 @@ import { useEffect, useState } from 'react';
 export default function FloatingTimer() {
   const { isActive, timeRemaining, stopTimer } = useTimer();
   const [showExpired, setShowExpired] = useState(false);
+  const [wasActive, setWasActive] = useState(false);
 
   useEffect(() => {
-    if (timeRemaining === 0 && isActive) {
+    if (isActive) {
+      setWasActive(true);
+    }
+    
+    if (wasActive && !isActive && timeRemaining === 0) {
       setShowExpired(true);
+      setWasActive(false);
       const timeout = setTimeout(() => {
         setShowExpired(false);
-      }, 3000);
+      }, 5000);
       return () => clearTimeout(timeout);
     }
-  }, [timeRemaining, isActive]);
+  }, [isActive, timeRemaining, wasActive]);
 
-  if (!isActive) {
+  if (!isActive && !showExpired) {
     return null;
   }
 
@@ -71,12 +77,15 @@ export default function FloatingTimer() {
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
             className="fixed inset-0 z-50 flex items-center justify-center bg-black/50"
-            onClick={() => setShowExpired(false)}
+            onClick={() => {
+              setShowExpired(false);
+            }}
           >
             <motion.div
               initial={{ y: 50 }}
               animate={{ y: 0 }}
               className="bg-white rounded-cat-lg p-8 shadow-cat-hover max-w-md mx-4"
+              onClick={(e) => e.stopPropagation()}
             >
               <div className="text-center">
                 <div className="text-6xl mb-4">⏰</div>

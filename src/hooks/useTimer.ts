@@ -47,7 +47,16 @@ export function useTimer() {
           setTimeRemaining(remaining);
         } else {
           await clearTimerState();
+          setDuration(null);
+          setStartTime(null);
+          setIsActive(false);
+          setTimeRemaining(0);
         }
+      } else {
+        setDuration(null);
+        setStartTime(null);
+        setIsActive(false);
+        setTimeRemaining(0);
       }
     } catch (error) {
       console.error('Error loading timer state:', error);

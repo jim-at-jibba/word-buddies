@@ -38,7 +38,7 @@ export default function FloatingTimer() {
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         exit={{ opacity: 0, y: -20 }}
-        className="fixed top-4 right-4 z-40"
+        className="fixed bottom-4 right-4 z-40"
       >
         <div
           className={`bg-white rounded-cat shadow-cat-hover px-4 py-3 ${

@@ -229,7 +229,8 @@ export async function createQuestSession(
       return { word, isCorrect };
     });
 
-    await batchUpdateWordStats(uniqueAttempts);
+    const { batchUpdateWordStatsWithChanges } = await import('./client-spelling-logic');
+    const masteryChanges = await batchUpdateWordStatsWithChanges(uniqueAttempts);
 
     let celebrationLevel: 'great' | 'good' | 'keep-trying';
     if (score >= 80) {
@@ -253,6 +254,7 @@ export async function createQuestSession(
         attempts: a.attempts,
       })),
       celebrationLevel,
+      masteryChanges,
     };
   } catch (error) {
     logger.error('Error creating quest session:', error);

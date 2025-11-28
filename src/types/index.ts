@@ -40,6 +40,13 @@ export interface PracticeWord {
   difficulty: number;
 }
 
+export interface MasteryChange {
+  word: string;
+  previousLevel: number;
+  newLevel: number;
+  leveledUp: boolean;
+}
+
 export interface SessionResult {
   sessionId: string;
   score: number;
@@ -49,6 +56,7 @@ export interface SessionResult {
   attempts: SpellingAttempt[];
   celebrationLevel: 'great' | 'good' | 'keep-trying';
   gameType?: 'spelling' | 'homophones';
+  masteryChanges?: MasteryChange[];
 }
 
 export interface HomophonePracticeWord {

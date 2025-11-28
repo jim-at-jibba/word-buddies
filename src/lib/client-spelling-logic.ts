@@ -138,6 +138,13 @@ export async function updateWordStats(wordText: string, isCorrect: boolean): Pro
   }
 }
 
+export interface MasteryChange {
+  word: string;
+  previousLevel: number;
+  newLevel: number;
+  leveledUp: boolean;
+}
+
 export async function batchUpdateWordStats(
   attempts: Array<{ word: string; isCorrect: boolean }>
 ): Promise<void> {
@@ -168,6 +175,56 @@ export async function batchUpdateWordStats(
     }
   } catch (error) {
     logger.error('Error batch updating word stats:', error);
+  }
+}
+
+export async function batchUpdateWordStatsWithChanges(
+  attempts: Array<{ word: string; isCorrect: boolean }>
+): Promise<MasteryChange[]> {
+  try {
+    await ensureInitialized();
+    
+    const { updateWordMastery } = await import('./mastery-system');
+    
+    // Get all words that need to be updated
+    const wordsToUpdate: StoredWord[] = [];
+    const masteryChanges: MasteryChange[] = [];
+    
+    for (const attempt of attempts) {
+      const word = await browserDB.getWordByText(attempt.word.toLowerCase());
+      if (!word) {
+        logger.error('Word not found:', attempt.word);
+        continue;
+      }
+
+      const previousLevel = word.masteryLevel || 0;
+      // Use mastery system to update word stats
+      const updatedWord = updateWordMastery(word, attempt.isCorrect);
+      const newLevel = updatedWord.masteryLevel || 0;
+      
+      wordsToUpdate.push(updatedWord);
+      
+      // Track mastery changes
+      if (newLevel !== previousLevel) {
+        masteryChanges.push({
+          word: attempt.word,
+          previousLevel,
+          newLevel,
+          leveledUp: newLevel > previousLevel,
+        });
+      }
+    }
+
+    // Batch update all words in a single transaction
+    if (wordsToUpdate.length > 0) {
+      await browserDB.batchUpdateWords(wordsToUpdate);
+      logger.debug(`Batch updated ${wordsToUpdate.length} words in a single transaction`);
+    }
+    
+    return masteryChanges;
+  } catch (error) {
+    logger.error('Error batch updating word stats:', error);
+    return [];
   }
 }
 

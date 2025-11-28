@@ -47,6 +47,7 @@ function QuestChapterContent() {
   const [audioInitialized, setAudioInitialized] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sessionResult, setSessionResult] = useState<Awaited<ReturnType<typeof createQuestSession>> | null>(null);
   
   const spellingInputRef = useRef<SpellingInputRef>(null);
   const hasInitializedRef = useRef(false);
@@ -161,8 +162,9 @@ function QuestChapterContent() {
   const completeQuest = async () => {
     try {
       const sessionDuration = Math.floor((new Date().getTime() - sessionStartTime.getTime()) / 1000);
-      const sessionResult = await createQuestSession(chapter, attempts);
-      await updateQuestSessionDuration(sessionResult.sessionId, sessionDuration);
+      const result = await createQuestSession(chapter, attempts);
+      await updateQuestSessionDuration(result.sessionId, sessionDuration);
+      setSessionResult(result);
       // No longer marking chapter as complete - infinite quests!
       setPhase('completion');
     } catch (error) {
@@ -433,6 +435,44 @@ function QuestChapterContent() {
                 <p className="font-kid-friendly text-cat-gray mb-8">
                   Great job! Ready for another quest with new words?
                 </p>
+
+                {/* Mastery Level-Up Feedback */}
+                {sessionResult?.masteryChanges && sessionResult.masteryChanges.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.3 }}
+                    className="mb-8 bg-gradient-to-r from-cat-cream to-cat-light rounded-cat-lg p-6"
+                  >
+                    <h3 className="text-xl font-kid-friendly font-bold text-cat-dark mb-4">
+                      ⭐ Words Leveled Up!
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-left max-h-64 overflow-y-auto">
+                      {sessionResult.masteryChanges
+                        .filter(change => change.leveledUp)
+                        .map((change, index) => (
+                          <motion.div
+                            key={index}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.4 + index * 0.1 }}
+                            className="bg-white rounded-cat p-4 shadow-sm"
+                          >
+                            <div className="flex items-center justify-between">
+                              <span className="font-kid-friendly font-bold text-cat-dark">
+                                {change.word}
+                              </span>
+                              <div className="flex items-center space-x-2">
+                                <span className="text-sm text-cat-gray">Level {change.previousLevel}</span>
+                                <span className="text-cat-orange">→</span>
+                                <span className="text-sm font-bold text-cat-success">Level {change.newLevel}</span>
+                              </div>
+                            </div>
+                          </motion.div>
+                        ))}
+                    </div>
+                  </motion.div>
+                )}
 
                 <div className="flex flex-wrap justify-center gap-4">
                   <motion.button

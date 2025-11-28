@@ -150,13 +150,13 @@ describe('client-spelling-logic', () => {
         })
       );
 
-      // Should schedule review within 2 hours (sooner than spaced repetition)
+      // With mastery system, incorrect answer drops to Level 0 (immediate review)
       const updateCall = vi.mocked(browserDB.updateWord).mock.calls[0][0];
       const reviewTime = updateCall.nextReview!;
-      const twoHoursInMs = 2 * 60 * 60 * 1000;
       
-      expect(reviewTime).toBeGreaterThan(beforeTime);
-      expect(reviewTime).toBeLessThan(afterTime + twoHoursInMs + 1000); // Small buffer for test execution time
+      // Level 0 has interval 0, so nextReview equals current time
+      expect(reviewTime).toBeGreaterThanOrEqual(beforeTime);
+      expect(reviewTime).toBeLessThanOrEqual(afterTime);
     });
   });
 

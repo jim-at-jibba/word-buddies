@@ -5,21 +5,36 @@ import { getWordsForYearGroup, getYearGroupDisplayName } from '../data/words';
 let isInitialized = false;
 
 export async function initializeBrowserStorage(): Promise<void> {
-  if (isInitialized) return;
+  console.log('[Storage] initializeBrowserStorage called, isInitialized:', isInitialized);
+  
+  if (isInitialized) {
+    console.log('[Storage] Already initialized, skipping');
+    return;
+  }
 
   try {
+    console.log('[Storage] Checking for existing words...');
+    
     // Check if words are already in storage
     const existingWords = await browserDB.getAllWords();
+    console.log(`[Storage] Found ${existingWords.length} existing words`);
     
     if (existingWords.length === 0) {
+      console.log('[Storage] No words found, initializing word list...');
+      
       // Get user settings to determine year group
       const userSettings = await browserDB.getUserSettings();
-      const yearGroup = userSettings.yearGroup || 3; // Default to Year 3 & 4
+      console.log('[Storage] User settings:', userSettings);
       
-      console.log(`Initializing browser storage with ${getYearGroupDisplayName(yearGroup)} words...`);
+      const yearGroup = userSettings.yearGroup || 3; // Default to Year 3 & 4
+      console.log(`[Storage] Using year group: ${yearGroup}`);
+      
+      console.log(`[Storage] Initializing browser storage with ${getYearGroupDisplayName(yearGroup)} words...`);
       
       // Get words for the selected year group
       const wordsForYearGroup = getWordsForYearGroup(yearGroup);
+      console.log(`[Storage] Got ${wordsForYearGroup.length} words from getWordsForYearGroup`);
+      console.log('[Storage] Sample words:', wordsForYearGroup.slice(0, 10));
       
       // Convert word list to StoredWord format
       const wordsToInsert: StoredWord[] = wordsForYearGroup.map(word => ({
@@ -30,13 +45,22 @@ export async function initializeBrowserStorage(): Promise<void> {
         createdAt: Date.now(),
       }));
       
+      console.log(`[Storage] Inserting ${wordsToInsert.length} words into database...`);
+      
       await browserDB.insertWords(wordsToInsert);
-      console.log(`Inserted ${wordsForYearGroup.length} words into browser storage`);
+      console.log(`[Storage] Successfully inserted ${wordsForYearGroup.length} words into browser storage`);
+      
+      // Verify insertion
+      const verifyWords = await browserDB.getAllWords();
+      console.log(`[Storage] Verification: ${verifyWords.length} words now in storage`);
+    } else {
+      console.log('[Storage] Words already exist, skipping insertion');
     }
     
     isInitialized = true;
+    console.log('[Storage] Initialization complete, isInitialized:', isInitialized);
   } catch (error) {
-    console.error('Error initializing browser storage:', error);
+    console.error('[Storage] ERROR during initialization:', error);
     throw error;
   }
 }

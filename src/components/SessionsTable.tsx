@@ -219,13 +219,21 @@ export default function SessionsTable({ sessions }: SessionsTableProps) {
                 </td>
                 <td className="p-4 font-kid-friendly text-cat-dark">
                   <div className={`inline-flex items-center space-x-2 px-3 py-1 rounded-cat ${
-                    session.gameType === 'homophones' 
+                    session.sessionType === 'quest'
+                      ? 'bg-purple-100 text-purple-600'
+                      : session.gameType === 'homophones' 
                       ? 'bg-cat-success/20 text-cat-success' 
                       : 'bg-cat-orange/20 text-cat-orange'
                   }`}>
-                    <span>{session.gameType === 'homophones' ? '🔄' : '✏️'}</span>
+                    <span>
+                      {session.sessionType === 'quest' 
+                        ? '🗺️' 
+                        : session.gameType === 'homophones' ? '🔄' : '✏️'}
+                    </span>
                     <span className="font-semibold">
-                      {session.gameType === 'homophones' ? 'Homophones' : 'Spelling'}
+                      {session.sessionType === 'quest'
+                        ? `Quest Ch${session.chapter || 1}`
+                        : session.gameType === 'homophones' ? 'Homophones' : 'Spelling'}
                     </span>
                   </div>
                 </td>
@@ -280,13 +288,21 @@ export default function SessionsTable({ sessions }: SessionsTableProps) {
               <div>
                 <div className="text-sm font-kid-friendly text-cat-gray">Game Type</div>
                 <div className={`inline-flex items-center space-x-1 px-2 py-1 rounded text-xs ${
-                  session.gameType === 'homophones' 
+                  session.sessionType === 'quest'
+                    ? 'bg-purple-100 text-purple-600'
+                    : session.gameType === 'homophones' 
                     ? 'bg-cat-success/20 text-cat-success' 
                     : 'bg-cat-orange/20 text-cat-orange'
                 }`}>
-                  <span>{session.gameType === 'homophones' ? '🔄' : '✏️'}</span>
+                  <span>
+                    {session.sessionType === 'quest' 
+                      ? '🗺️' 
+                      : session.gameType === 'homophones' ? '🔄' : '✏️'}
+                  </span>
                   <span className="font-semibold">
-                    {session.gameType === 'homophones' ? 'Homophones' : 'Spelling'}
+                    {session.sessionType === 'quest'
+                      ? `Quest Ch${session.chapter || 1}`
+                      : session.gameType === 'homophones' ? 'Homophones' : 'Spelling'}
                   </span>
                 </div>
               </div>

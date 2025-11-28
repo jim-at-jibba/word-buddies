@@ -106,6 +106,22 @@ export default function Home() {
                   </motion.button>
                 </Link>
 
+                <Link href="/quests">
+                  <motion.button
+                    className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-cat shadow-cat hover:shadow-cat-hover transition-all duration-200 text-xl w-full"
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                  >
+                    <span className="flex items-center justify-center space-x-2">
+                      <span>🗺️</span>
+                      <span>Quest Mode</span>
+                      <span className="text-xs bg-white text-purple-600 px-2 py-1 rounded-full ml-2 font-kid-friendly">
+                        NEW!
+                      </span>
+                    </span>
+                  </motion.button>
+                </Link>
+
                 {canPlayHomophones && (
                   <Link href="/homophones">
                     <motion.button
@@ -195,7 +211,7 @@ export default function Home() {
             transition={{ duration: 0.6, delay: 0.6 }}
             className="mt-8"
           >
-            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
               <Link href="/review">
                 <motion.div
                   className="bg-white rounded-cat p-4 shadow-cat text-center hover:shadow-cat-hover transition-all duration-200 cursor-pointer relative"
@@ -210,6 +226,19 @@ export default function Home() {
                   <div className="text-3xl mb-2">🔄</div>
                   <h4 className="font-kid-friendly font-bold text-cat-dark text-sm">
                     Review Words
+                  </h4>
+                </motion.div>
+              </Link>
+
+              <Link href="/heatmap">
+                <motion.div
+                  className="bg-white rounded-cat p-4 shadow-cat text-center hover:shadow-cat-hover transition-all duration-200 cursor-pointer"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <div className="text-3xl mb-2">🔥</div>
+                  <h4 className="font-kid-friendly font-bold text-cat-dark text-sm">
+                    Heatmap
                   </h4>
                 </motion.div>
               </Link>

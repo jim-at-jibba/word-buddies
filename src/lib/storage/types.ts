@@ -17,6 +17,8 @@ export interface StoredSession {
   score: number;
   duration: number;
   gameType?: 'spelling' | 'homophones'; // Type of game played
+  sessionType?: 'practice' | 'quest'; // Practice or quest mode
+  chapter?: number; // Quest chapter number (only for quest sessions)
 }
 
 export interface StoredWordAttempt {
@@ -31,6 +33,7 @@ export interface StoredWordAttempt {
   contextSentence?: string; // For homophones game
   correctHomophone?: string; // For homophones game
   selectedHomophone?: string; // For homophones game
+  round?: number; // Quest round number (1, 2, or 3)
 }
 
 export interface UserSettings {
@@ -44,13 +47,20 @@ export interface UserSettings {
   lastUpdated: number;
 }
 
+export interface QuestProgress {
+  currentChapter: number;
+  completedChapters: number[];
+  chapterWordSets: Record<number, string[]>;
+}
+
 export interface BrowserStorageData {
   words: StoredWord[];
   sessions: StoredSession[];
   wordAttempts: StoredWordAttempt[];
   userSettings?: UserSettings;
+  questProgress?: QuestProgress;
   version: number;
   lastUpdated: number;
 }
 
-export type StorageKey = 'words' | 'sessions' | 'wordAttempts' | 'userSettings';
+export type StorageKey = 'words' | 'sessions' | 'wordAttempts' | 'userSettings' | 'questProgress';

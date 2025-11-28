@@ -1,8 +1,8 @@
-import { StoredWord, StoredSession, StoredWordAttempt, UserSettings } from './types';
+import { StoredWord, StoredSession, StoredWordAttempt, UserSettings, QuestProgress } from './types';
 import { retryWithBackoff } from '../retry-utils';
 
 const DB_NAME = 'WordBuddiesDB';
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 class BrowserDB {
   private db: IDBDatabase | null = null;
@@ -30,6 +30,9 @@ class BrowserDB {
 
         request.onupgradeneeded = (event) => {
           const db = (event.target as IDBOpenDBRequest).result;
+          const oldVersion = (event as IDBVersionChangeEvent).oldVersion;
+          
+          console.log(`Upgrading IndexedDB from version ${oldVersion} to ${DB_VERSION}`);
 
           // Words store
           if (!db.objectStoreNames.contains('words')) {
@@ -54,6 +57,12 @@ class BrowserDB {
           // User settings store
           if (!db.objectStoreNames.contains('userSettings')) {
             db.createObjectStore('userSettings', { keyPath: 'id' });
+          }
+
+          // Quest progress store (added in version 2)
+          if (!db.objectStoreNames.contains('questProgress')) {
+            console.log('Creating questProgress store');
+            db.createObjectStore('questProgress', { keyPath: 'id' });
           }
         };
         
@@ -425,10 +434,10 @@ class BrowserDB {
   async clearAllData(): Promise<void> {
     const db = await this.initDB();
     return new Promise((resolve, reject) => {
-      const transaction = db.transaction(['words', 'sessions', 'wordAttempts', 'userSettings'], 'readwrite');
+      const transaction = db.transaction(['words', 'sessions', 'wordAttempts', 'userSettings', 'questProgress'], 'readwrite');
       
       let completed = 0;
-      const total = 4;
+      const total = 5;
 
       const onComplete = () => {
         completed++;
@@ -439,8 +448,33 @@ class BrowserDB {
       transaction.objectStore('sessions').clear().onsuccess = onComplete;
       transaction.objectStore('wordAttempts').clear().onsuccess = onComplete;
       transaction.objectStore('userSettings').clear().onsuccess = onComplete;
+      transaction.objectStore('questProgress').clear().onsuccess = onComplete;
       
       transaction.onerror = () => reject(transaction.error);
+    });
+  }
+
+  async getQuestProgress(): Promise<QuestProgress | null> {
+    const db = await this.initDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['questProgress'], 'readonly');
+      const store = transaction.objectStore('questProgress');
+      const request = store.get('default');
+
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error);
+    });
+  }
+
+  async updateQuestProgress(progress: QuestProgress): Promise<void> {
+    const db = await this.initDB();
+    return new Promise((resolve, reject) => {
+      const transaction = db.transaction(['questProgress'], 'readwrite');
+      const store = transaction.objectStore('questProgress');
+      const request = store.put({ ...progress, id: 'default' });
+
+      request.onsuccess = () => resolve();
+      request.onerror = () => reject(request.error);
     });
   }
 }

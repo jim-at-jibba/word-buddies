@@ -8,6 +8,7 @@ import CatMascot from '@/components/CatMascot';
 import TTSErrorBoundary from '@/components/TTSErrorBoundary';
 import { AudioLoadingSpinner } from '@/components/LoadingSpinner';
 import IOSAudioInit from '@/components/IOSAudioInit';
+import SimpleWordCard from '@/components/SimpleWordCard';
 import { useNotifications } from '@/hooks/useNotifications';
 import { NotificationContainer } from '@/components/NotificationToast';
 import { useYearGroup } from '@/hooks/useSettings';
@@ -286,14 +287,7 @@ function QuestChapterContent() {
 
                 <div className="grid md:grid-cols-2 gap-4 mb-8">
                   {words.map((word, index) => (
-                    <div key={index} className="bg-cat-cream rounded-cat p-4 flex items-center justify-between">
-                      <span className="font-kid-friendly text-lg text-cat-dark font-bold">
-                        {index + 1}. {word}
-                      </span>
-                      <Suspense fallback={<div className="w-8 h-8" />}>
-                        <WordPlayer word={word} autoPlay={false} />
-                      </Suspense>
-                    </div>
+                    <SimpleWordCard key={index} word={word} index={index} />
                   ))}
                 </div>
 

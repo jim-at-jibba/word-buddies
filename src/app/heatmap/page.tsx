@@ -351,7 +351,7 @@ function HeatmapContent() {
                 No words match this filter
               </p>
             ) : (
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3">
                 {filteredData.map((word, index) => (
                   <motion.div
                     key={index}

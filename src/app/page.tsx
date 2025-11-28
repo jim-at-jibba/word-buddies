@@ -93,7 +93,7 @@ export default function Home() {
               </p>
 
               <div className="space-y-4">
-                <Link href="/practice">
+                <Link href="/practice" className="block">
                   <motion.button
                     className="cat-button text-xl px-8 py-4 w-full"
                     whileHover={{ scale: 1.05 }}
@@ -106,7 +106,7 @@ export default function Home() {
                   </motion.button>
                 </Link>
 
-                <Link href="/quests">
+                <Link href="/quests" className="block">
                   <motion.button
                     className="bg-purple-600 hover:bg-purple-700 text-white font-bold py-4 px-8 rounded-cat shadow-cat hover:shadow-cat-hover transition-all duration-200 text-xl w-full"
                     whileHover={{ scale: 1.05 }}
@@ -123,9 +123,9 @@ export default function Home() {
                 </Link>
 
                 {canPlayHomophones && (
-                  <Link href="/homophones">
+                  <Link href="/homophones" className="block">
                     <motion.button
-                      className="bg-cat-success hover:bg-cat-success/90 text-white font-bold py-4 px-8 rounded-cat shadow-cat hover:shadow-cat-hover transition-all duration-200 text-xl w-full mt-2"
+                      className="bg-cat-success hover:bg-cat-success/90 text-white font-bold py-4 px-8 rounded-cat shadow-cat hover:shadow-cat-hover transition-all duration-200 text-xl w-full"
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
                     >

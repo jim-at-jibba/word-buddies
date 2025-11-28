@@ -148,6 +148,43 @@ export async function markChapterComplete(chapter: number): Promise<void> {
   }
 }
 
+// Chapter unlocking requirements
+const CHAPTER_UNLOCK_REQUIREMENTS = {
+  1: 0, // Chapter 1 always unlocked
+  2: 10, // Need 10 mastered words (level 4-5) to unlock Chapter 2
+  3: 25, // Need 25 mastered words (level 4-5) to unlock Chapter 3
+};
+
+export async function getUnlockedChapters(): Promise<number[]> {
+  await ensureInitialized();
+  const allWords = await browserDB.getAllWords();
+  
+  // Count mastered words (level 4 and 5)
+  const masteredWords = allWords.filter(word => 
+    (word.masteryLevel || 0) >= 4
+  ).length;
+  
+  console.log(`[Quest] User has ${masteredWords} mastered words`);
+  
+  const unlockedChapters: number[] = [];
+  
+  // Check each chapter
+  for (const [chapterStr, requirement] of Object.entries(CHAPTER_UNLOCK_REQUIREMENTS)) {
+    const chapter = parseInt(chapterStr);
+    if (masteredWords >= requirement) {
+      unlockedChapters.push(chapter);
+    }
+  }
+  
+  console.log(`[Quest] Unlocked chapters:`, unlockedChapters);
+  return unlockedChapters;
+}
+
+export async function isChapterUnlocked(chapter: number): Promise<boolean> {
+  const unlockedChapters = await getUnlockedChapters();
+  return unlockedChapters.includes(chapter);
+}
+
 export async function createQuestSession(
   chapter: number,
   attempts: Array<{ word: string; userSpelling: string; isCorrect: boolean; attempts: number; round: number }>

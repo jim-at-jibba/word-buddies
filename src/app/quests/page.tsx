@@ -8,7 +8,7 @@ import CatMascot from '@/components/CatMascot';
 import MasteryTutorial from '@/components/MasteryTutorial';
 import MasteryHelpModal from '@/components/MasteryHelpModal';
 import { useSettings } from '@/hooks/useSettings';
-import { getQuestProgress } from '@/lib/client-quest-logic';
+import { getQuestProgress, getUnlockedChapters, isChapterUnlocked } from '@/lib/client-quest-logic';
 import { QuestProgress } from '@/lib/storage';
 import { logger } from '@/lib/logger';
 
@@ -16,6 +16,7 @@ function QuestsContent() {
   const router = useRouter();
   const { settings, updateSettings, loading: settingsLoading } = useSettings();
   const [questProgress, setQuestProgress] = useState<QuestProgress | null>(null);
+  const [unlockedChapters, setUnlockedChapters] = useState<number[]>([]);
   const [loading, setLoading] = useState(true);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
@@ -33,8 +34,12 @@ function QuestsContent() {
 
   const loadQuestProgress = async () => {
     try {
-      const progress = await getQuestProgress();
+      const [progress, unlocked] = await Promise.all([
+        getQuestProgress(),
+        getUnlockedChapters()
+      ]);
       setQuestProgress(progress);
+      setUnlockedChapters(unlocked);
     } catch (error) {
       logger.error('Error loading quest progress:', error);
     } finally {
@@ -56,9 +61,7 @@ function QuestsContent() {
   };
 
   const isChapterAvailable = (chapter: number) => {
-    if (!questProgress) return false;
-    if (chapter === 1) return true;
-    return false;
+    return unlockedChapters.includes(chapter);
   };
 
   const isChapterComplete = (chapter: number) => {
@@ -133,6 +136,7 @@ function QuestsContent() {
         <div className="max-w-4xl mx-auto">
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             
+            {/* Chapter 1 */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -166,47 +170,89 @@ function QuestsContent() {
               </div>
             </motion.div>
 
+            {/* Chapter 2 */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.2 }}
-              className="bg-white rounded-cat-lg p-6 shadow-cat opacity-60"
+              className={`bg-white rounded-cat-lg p-6 shadow-cat ${
+                isChapterAvailable(2) ? 'cursor-pointer hover:shadow-cat-hover' : 'opacity-60'
+              }`}
+              onClick={() => isChapterAvailable(2) && handleStartChapter(2)}
+              whileHover={isChapterAvailable(2) ? { scale: 1.02 } : {}}
             >
               <div className="text-center">
-                <div className="text-4xl mb-4">🔒</div>
-                <h3 className="text-xl font-kid-friendly font-bold text-cat-gray mb-2">
+                <div className="text-4xl mb-4">
+                  {isChapterComplete(2) ? '✅' : isChapterAvailable(2) ? '📗' : '🔒'}
+                </div>
+                <h3 className={`text-xl font-kid-friendly font-bold mb-2 ${
+                  isChapterAvailable(2) ? 'text-cat-dark' : 'text-cat-gray'
+                }`}>
                   Chapter 2
                 </h3>
-                <p className="text-sm font-kid-friendly text-cat-gray mb-4">
+                <p className={`text-sm font-kid-friendly mb-4 ${
+                  isChapterAvailable(2) ? 'text-cat-gray' : 'text-cat-gray'
+                }`}>
                   Medium Mode
                 </p>
                 <div className="space-y-2 text-sm font-kid-friendly text-cat-gray text-left">
                   <p>• No word preview</p>
                   <p>• 10 word challenge</p>
-                  <p>• Coming soon!</p>
+                  <p>• Listen & Spell</p>
                 </div>
+                {!isChapterAvailable(2) && (
+                  <div className="mt-4 text-cat-orange font-kid-friendly text-sm">
+                    🔓 Unlock: 10 mastered words
+                  </div>
+                )}
+                {isChapterComplete(2) && (
+                  <div className="mt-4 text-cat-success font-kid-friendly font-bold">
+                    ⭐ Completed!
+                  </div>
+                )}
               </div>
             </motion.div>
 
+            {/* Chapter 3 */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.4, delay: 0.3 }}
-              className="bg-white rounded-cat-lg p-6 shadow-cat opacity-60"
+              className={`bg-white rounded-cat-lg p-6 shadow-cat ${
+                isChapterAvailable(3) ? 'cursor-pointer hover:shadow-cat-hover' : 'opacity-60'
+              }`}
+              onClick={() => isChapterAvailable(3) && handleStartChapter(3)}
+              whileHover={isChapterAvailable(3) ? { scale: 1.02 } : {}}
             >
               <div className="text-center">
-                <div className="text-4xl mb-4">🔒</div>
-                <h3 className="text-xl font-kid-friendly font-bold text-cat-gray mb-2">
+                <div className="text-4xl mb-4">
+                  {isChapterComplete(3) ? '✅' : isChapterAvailable(3) ? '📕' : '🔒'}
+                </div>
+                <h3 className={`text-xl font-kid-friendly font-bold mb-2 ${
+                  isChapterAvailable(3) ? 'text-cat-dark' : 'text-cat-gray'
+                }`}>
                   Chapter 3
                 </h3>
-                <p className="text-sm font-kid-friendly text-cat-gray mb-4">
+                <p className={`text-sm font-kid-friendly mb-4 ${
+                  isChapterAvailable(3) ? 'text-cat-gray' : 'text-cat-gray'
+                }`}>
                   Hard Mode
                 </p>
                 <div className="space-y-2 text-sm font-kid-friendly text-cat-gray text-left">
                   <p>• No word preview</p>
                   <p>• 20 word challenge</p>
-                  <p>• Coming soon!</p>
+                  <p>• 10s timer + speed bonus</p>
                 </div>
+                {!isChapterAvailable(3) && (
+                  <div className="mt-4 text-cat-orange font-kid-friendly text-sm">
+                    🔓 Unlock: 25 mastered words
+                  </div>
+                )}
+                {isChapterComplete(3) && (
+                  <div className="mt-4 text-cat-success font-kid-friendly font-bold">
+                    ⭐ Completed!
+                  </div>
+                )}
               </div>
             </motion.div>
           </div>

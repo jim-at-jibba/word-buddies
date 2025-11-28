@@ -46,6 +46,7 @@ export interface UserSettings {
   timerDuration?: number; // Timer duration in minutes
   timerStartTime?: number; // Timer start timestamp
   timerIsActive?: boolean; // Whether timer is currently active
+  hasSeenMasteryTutorial?: boolean; // Whether user has seen mastery tutorial
   version: number;
   lastUpdated: number;
 }

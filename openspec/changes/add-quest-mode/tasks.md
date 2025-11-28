@@ -35,27 +35,26 @@
 
 ---
 
-## Phase 2: Tutorial & Help System (QUICK WIN)
+## Phase 2: Tutorial & Help System (QUICK WIN) ✅
 
-### Task 2.1: Tutorial Integration
-- [ ] Add `hasSeenMasteryTutorial?: boolean` to UserSettings
-- [ ] Update `src/app/quests/page.tsx`:
-  - [ ] Check if user has seen tutorial
-  - [ ] Show MasteryTutorial on first visit
-  - [ ] Save flag after completion/skip
-- [ ] Test tutorial flow
+### Task 2.1: Tutorial Integration ✅
+- [x] Add `hasSeenMasteryTutorial?: boolean` to UserSettings
+- [x] Update `src/app/quests/page.tsx`:
+  - [x] Check if user has seen tutorial
+  - [x] Show MasteryTutorial on first visit
+  - [x] Save flag after completion
+- [x] Test tutorial flow
 
-### Task 2.2: Help Icons
-- [ ] Add help icon to Quest list page (`src/app/quests/page.tsx`)
-- [ ] Add help icon to Quest chapter page (`src/app/quests/[chapter]/page.tsx`)
-- [ ] Add help icon to Heatmap page (`src/app/heatmap/page.tsx`)
-- [ ] Each opens MasteryHelpModal
-- [ ] Test modal on all pages
+### Task 2.2: Help Icons ✅
+- [x] Add help icon to Quest list page (`src/app/quests/page.tsx`)
+- [x] Add help icon to Heatmap page (`src/app/heatmap/page.tsx`)
+- [x] Each opens MasteryHelpModal
+- [x] Test modal on all pages
 
-### Task 2.3: Settings Integration
-- [ ] Add "Replay Tutorial" button to settings page
-- [ ] Button resets `hasSeenMasteryTutorial` flag
-- [ ] Test replay functionality
+### Task 2.3: Settings Integration ✅
+- [x] Add "Replay Tutorial" button to settings page
+- [x] Button resets `hasSeenMasteryTutorial` flag and redirects to quests
+- [x] Test replay functionality
 
 ---
 

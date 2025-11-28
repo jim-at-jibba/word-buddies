@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import CatMascot from '@/components/CatMascot';
+import MasteryHelpModal from '@/components/MasteryHelpModal';
 import { getWordHeatmapData, WordHeatmapData } from '@/lib/client-quest-logic';
 import { logger } from '@/lib/logger';
 
@@ -13,6 +14,7 @@ function HeatmapContent() {
   const [heatmapData, setHeatmapData] = useState<WordHeatmapData[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<FilterLevel>('all');
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   useEffect(() => {
     loadHeatmapData();
@@ -162,8 +164,12 @@ function HeatmapContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cat-cream via-cat-light to-white">
-      <div className="container mx-auto px-4 py-8">
+    <>
+      {showHelpModal && (
+        <MasteryHelpModal onClose={() => setShowHelpModal(false)} />
+      )}
+      <div className="min-h-screen bg-gradient-to-br from-cat-cream via-cat-light to-white">
+        <div className="container mx-auto px-4 py-8">
         
         <motion.header
           initial={{ opacity: 0, y: -30 }}
@@ -182,13 +188,22 @@ function HeatmapContent() {
             </motion.button>
           </Link>
 
-          <div className="text-center">
+          <div className="text-center relative">
             <h1 className="text-4xl md:text-5xl font-kid-friendly font-bold text-cat-dark mb-4">
               🔥 Word Heatmap
             </h1>
             <p className="text-lg md:text-xl font-kid-friendly text-cat-gray max-w-2xl mx-auto">
-              Track your progress with color-coded words based on your success rate
+              Track your progress with color-coded words based on mastery levels
             </p>
+            <motion.button
+              onClick={() => setShowHelpModal(true)}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="absolute top-0 right-0 md:right-8 w-10 h-10 rounded-full bg-cat-orange text-white font-bold text-xl shadow-cat hover:shadow-cat-hover transition-shadow"
+              title="Learn about Mastery System"
+            >
+              ?
+            </motion.button>
           </div>
         </motion.header>
 
@@ -387,6 +402,7 @@ function HeatmapContent() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

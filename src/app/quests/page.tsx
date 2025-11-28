@@ -5,20 +5,31 @@ import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import CatMascot from '@/components/CatMascot';
-import { useYearGroup } from '@/hooks/useSettings';
+import MasteryTutorial from '@/components/MasteryTutorial';
+import MasteryHelpModal from '@/components/MasteryHelpModal';
+import { useSettings } from '@/hooks/useSettings';
 import { getQuestProgress } from '@/lib/client-quest-logic';
 import { QuestProgress } from '@/lib/storage';
 import { logger } from '@/lib/logger';
 
 function QuestsContent() {
   const router = useRouter();
-  useYearGroup();
+  const { settings, updateSettings, loading: settingsLoading } = useSettings();
   const [questProgress, setQuestProgress] = useState<QuestProgress | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showTutorial, setShowTutorial] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
 
   useEffect(() => {
     loadQuestProgress();
   }, []);
+
+  useEffect(() => {
+    // Show tutorial on first visit
+    if (!settingsLoading && settings && !settings.hasSeenMasteryTutorial) {
+      setShowTutorial(true);
+    }
+  }, [settings, settingsLoading]);
 
   const loadQuestProgress = async () => {
     try {
@@ -28,6 +39,15 @@ function QuestsContent() {
       logger.error('Error loading quest progress:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleTutorialComplete = async () => {
+    setShowTutorial(false);
+    try {
+      await updateSettings({ hasSeenMasteryTutorial: true });
+    } catch (error) {
+      logger.error('Error saving tutorial flag:', error);
     }
   };
 
@@ -45,7 +65,7 @@ function QuestsContent() {
     return questProgress?.completedChapters.includes(chapter) || false;
   };
 
-  if (loading) {
+  if (loading || settingsLoading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-cat-cream via-cat-light to-white flex items-center justify-center">
         <div className="text-center">
@@ -64,8 +84,15 @@ function QuestsContent() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-cat-cream via-cat-light to-white">
-      <div className="container mx-auto px-4 py-8">
+    <>
+      {showTutorial && (
+        <MasteryTutorial onComplete={handleTutorialComplete} />
+      )}
+      {showHelpModal && (
+        <MasteryHelpModal onClose={() => setShowHelpModal(false)} />
+      )}
+      <div className="min-h-screen bg-gradient-to-br from-cat-cream via-cat-light to-white">
+        <div className="container mx-auto px-4 py-8">
         
         <motion.header
           initial={{ opacity: 0, y: -30 }}
@@ -84,13 +111,22 @@ function QuestsContent() {
             </motion.button>
           </Link>
 
-          <div className="text-center">
+          <div className="text-center relative">
             <h1 className="text-4xl md:text-5xl font-kid-friendly font-bold text-cat-dark mb-4">
               🗺️ Quest Mode
             </h1>
             <p className="text-lg md:text-xl font-kid-friendly text-cat-gray max-w-2xl mx-auto">
               Complete chapters to master your spelling words! Each chapter has different challenges.
             </p>
+            <motion.button
+              onClick={() => setShowHelpModal(true)}
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+              className="absolute top-0 right-0 md:right-8 w-10 h-10 rounded-full bg-cat-orange text-white font-bold text-xl shadow-cat hover:shadow-cat-hover transition-shadow"
+              title="Learn about Mastery System"
+            >
+              ?
+            </motion.button>
           </div>
         </motion.header>
 
@@ -189,6 +225,7 @@ function QuestsContent() {
         </div>
       </div>
     </div>
+    </>
   );
 }
 

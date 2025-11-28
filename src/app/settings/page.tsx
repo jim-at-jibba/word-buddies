@@ -514,33 +514,28 @@ export default function SettingsPage() {
                 </p>
               </div>
 
-              {/* Future Settings Sections - Commented for extensibility */}
-              {/*
-              <div className="mb-6">
+              {/* Mastery Tutorial Section */}
+              <div className="mb-6 pt-6 border-t-2 border-cat-light">
                 <label className="block font-kid-friendly font-bold text-cat-dark mb-3">
-                  📚 Year Group
+                  🎯 Mastery System Tutorial
                 </label>
-                <select className="w-full p-4 border-2 border-cat-light rounded-cat font-kid-friendly text-lg focus:border-cat-orange focus:outline-none transition-colors duration-200">
-                  <option value="3">Year 3</option>
-                  <option value="4">Year 4</option>
-                  <option value="5">Year 5</option>
-                </select>
+                <div className="p-4 bg-cat-cream border-2 border-cat-light rounded-cat">
+                  <p className="font-kid-friendly text-cat-gray text-sm mb-3">
+                    Want to see the mastery system tutorial again? This explains how words level up as you practice!
+                  </p>
+                  <motion.button
+                    onClick={async () => {
+                      await updateSettings({ hasSeenMasteryTutorial: false });
+                      router.push('/quests');
+                    }}
+                    className="cat-button text-sm px-4 py-2"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    🎓 Replay Tutorial
+                  </motion.button>
+                </div>
               </div>
-
-              <div className="mb-6">
-                <label className="block font-kid-friendly font-bold text-cat-dark mb-3">
-                  🔊 ElevenLabs API Key
-                </label>
-                <input
-                  type="password"
-                  placeholder="Enter your API key..."
-                  className="w-full p-4 border-2 border-cat-light rounded-cat font-kid-friendly text-lg focus:border-cat-orange focus:outline-none transition-colors duration-200"
-                />
-                <p className="font-kid-friendly text-cat-gray text-sm mt-2">
-                  Optional: For better text-to-speech quality
-                </p>
-              </div>
-              */}
 
               {/* Save Button */}
               <motion.button

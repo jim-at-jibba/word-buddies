@@ -80,6 +80,14 @@ function QuestChapterContent() {
       setWords(chapterWords);
       setRoundWords(chapterWords);
       setSessionStartTime(new Date());
+      
+      // Chapter 2 and 3 skip preview and go straight to practice
+      if (chapter >= 2) {
+        setPhase('practice');
+        setCurrentWordIndex(0);
+        setCurrentRound(1);
+      }
+      
       console.log('[QuestPage] State updated successfully');
     } catch (error) {
       console.error('[QuestPage] ERROR in loadChapterWords:', error);
@@ -98,6 +106,9 @@ function QuestChapterContent() {
     setCurrentWordIndex(0);
     setCurrentRound(1);
   };
+  
+  // Check if this chapter skips preview (Chapter 2 and 3)
+  const skipsPreview = chapter >= 2;
 
   const handleSpellingSubmit = async (userSpelling: string) => {
     if (isSubmitting || currentWordIndex >= roundWords.length) return;

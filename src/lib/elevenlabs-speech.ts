@@ -85,7 +85,7 @@ async function generateSpeechAudio(text: string): Promise<string> {
           },
           body: JSON.stringify({
             text: text,
-            model_id: 'eleven_monolingual_v1',
+            model_id: 'eleven_turbo_v2_5', // Free tier compatible model
             voice_settings: {
               stability: 0.5,
               similarity_boost: 0.8,

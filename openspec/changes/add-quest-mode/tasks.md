@@ -58,27 +58,27 @@
 
 ---
 
-## Phase 3: Quest Generation (REMOVE CACHING)
+## Phase 3: Quest Generation (REMOVE CACHING) ✅
 
-### Task 3.1: Remove Chapter Word Sets
-- [ ] Remove `chapterWordSets` from QuestProgress type
-- [ ] Update `getChapterWords()` to generate fresh words each time
-- [ ] Remove caching logic
-- [ ] Add logging for word selection process
+### Task 3.1: Remove Chapter Word Sets ✅
+- [x] Remove `chapterWordSets` from QuestProgress type
+- [x] Update `getChapterWords()` to generate fresh words each time
+- [x] Remove caching logic
+- [x] Add logging for word selection process
 
-### Task 3.2: Mastery-Based Selection
-- [ ] Update word selection algorithm:
+### Task 3.2: Mastery-Based Selection ✅
+- [x] Update word selection algorithm:
   1. Get all words for year group
   2. Categorize by mastery level (0-5)
   3. Prioritize: Level 0 > Level 1-2 > Level 3-4 (due) > Level 5 (maintenance)
   4. Select 10 words randomly from prioritized list
-- [ ] Test word selection across all mastery levels
+- [x] Test word selection across all mastery levels
 
-### Task 3.3: Quest Completion Button
-- [ ] Remove "Chapter Complete" state/phase
-- [ ] Add "Start New Quest" button after quest completion
-- [ ] Button reloads page or triggers new quest generation
-- [ ] Test infinite quest generation
+### Task 3.3: Quest Completion Button ✅
+- [x] Remove `markChapterComplete()` call - no longer marking chapters as complete
+- [x] Change "Replay Chapter" to "Start New Quest" button
+- [x] Button reloads page to generate fresh quest with new words
+- [x] Changed completion text from "Chapter X Complete" to "Quest Complete"
 
 ---
 

@@ -14,7 +14,7 @@ import { NotificationContainer } from '@/components/NotificationToast';
 import { useYearGroup } from '@/hooks/useSettings';
 import { checkSpelling } from '@/lib/client-utils';
 import { speakEncouragement, speakWord } from '@/lib/speech';
-import { getChapterWords, createQuestSession, updateQuestSessionDuration, markChapterComplete } from '@/lib/client-quest-logic';
+import { getChapterWords, createQuestSession, updateQuestSessionDuration } from '@/lib/client-quest-logic';
 import { logger } from '@/lib/logger';
 
 const WordPlayer = lazy(() => import('@/components/WordPlayer'));
@@ -163,7 +163,7 @@ function QuestChapterContent() {
       const sessionDuration = Math.floor((new Date().getTime() - sessionStartTime.getTime()) / 1000);
       const sessionResult = await createQuestSession(chapter, attempts);
       await updateQuestSessionDuration(sessionResult.sessionId, sessionDuration);
-      await markChapterComplete(chapter);
+      // No longer marking chapter as complete - infinite quests!
       setPhase('completion');
     } catch (error) {
       logger.error('Error completing quest:', error);
@@ -428,29 +428,29 @@ function QuestChapterContent() {
               <div className="bg-white rounded-cat-lg p-8 shadow-cat text-center">
                 <CatMascot mood="excited" size="large" />
                 <h2 className="text-3xl font-kid-friendly font-bold text-cat-dark mb-4 mt-6">
-                  🎉 Chapter {chapter} Complete!
+                  🎉 Quest Complete!
                 </h2>
                 <p className="font-kid-friendly text-cat-gray mb-8">
-                  Amazing work! You&apos;ve mastered this chapter!
+                  Great job! Ready for another quest with new words?
                 </p>
 
                 <div className="flex flex-wrap justify-center gap-4">
                   <motion.button
-                    onClick={() => router.push('/quests')}
+                    onClick={() => window.location.reload()}
                     className="cat-button text-lg px-8 py-4"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    🗺️ Back to Quests
+                    ✨ Start New Quest
                   </motion.button>
                   
                   <motion.button
-                    onClick={() => window.location.reload()}
+                    onClick={() => router.push('/quests')}
                     className="bg-white text-cat-orange border-2 border-cat-orange font-kid-friendly font-bold py-4 px-8 rounded-cat hover:bg-cat-orange hover:text-white transition-all duration-200"
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    🔄 Replay Chapter
+                    🗺️ Back to Quests
                   </motion.button>
                 </div>
               </div>

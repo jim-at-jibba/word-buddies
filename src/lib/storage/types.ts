@@ -54,7 +54,6 @@ export interface UserSettings {
 export interface QuestProgress {
   currentChapter: number;
   completedChapters: number[];
-  chapterWordSets: Record<number, string[]>;
 }
 
 export interface BrowserStorageData {

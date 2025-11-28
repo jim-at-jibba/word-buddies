@@ -20,7 +20,6 @@ export async function getQuestProgress(): Promise<QuestProgress> {
     const defaultProgress: QuestProgress = {
       currentChapter: 1,
       completedChapters: [],
-      chapterWordSets: {},
     };
     await browserDB.updateQuestProgress(defaultProgress);
     return defaultProgress;
@@ -35,38 +34,22 @@ export async function resetQuestProgress(): Promise<void> {
   const defaultProgress: QuestProgress = {
     currentChapter: 1,
     completedChapters: [],
-    chapterWordSets: {},
   };
   await browserDB.updateQuestProgress(defaultProgress);
   console.log('[Quest] Quest progress reset to default');
 }
 
 export async function getChapterWords(chapter: number, difficulty: number): Promise<string[]> {
-  console.log(`[Quest] Step 1: Starting getChapterWords for chapter ${chapter}, difficulty ${difficulty}`);
+  console.log(`[Quest] Starting getChapterWords for chapter ${chapter}, difficulty ${difficulty}`);
+  logger.info(`Generating fresh word selection for chapter ${chapter}`);
   
   await ensureInitialized();
-  console.log('[Quest] Step 2: Storage initialized');
   
-  const progress = await getQuestProgress();
-  console.log('[Quest] Step 3: Got quest progress:', progress);
-  
-  // Return cached chapter words if they exist and are not empty
-  if (progress.chapterWordSets[chapter] && progress.chapterWordSets[chapter].length > 0) {
-    console.log(`[Quest] Step 4: Using cached words for chapter ${chapter}:`, progress.chapterWordSets[chapter]);
-    logger.info(`Using cached words for chapter ${chapter}: ${progress.chapterWordSets[chapter].length} words`);
-    return progress.chapterWordSets[chapter];
-  } else if (progress.chapterWordSets[chapter]) {
-    console.log(`[Quest] Step 4: Found empty cached words for chapter ${chapter}, regenerating...`);
-  }
-  
-  console.log('[Quest] Step 4: No cached words, selecting new words');
-  
-  const wordCount = chapter === 3 ? 20 : 10;
-  console.log(`[Quest] Step 5: Target word count: ${wordCount}`);
+  const wordCount = 10; // All chapters use 10 words now (consistent difficulty)
+  console.log(`[Quest] Target word count: ${wordCount}`);
   
   const allWords = await browserDB.getAllWords();
-  console.log(`[Quest] Step 6: Fetched ${allWords.length} words from storage`);
-  console.log('[Quest] Sample of first 5 words:', allWords.slice(0, 5));
+  console.log(`[Quest] Fetched ${allWords.length} words from storage`);
   
   logger.info(`Loading chapter ${chapter}: Found ${allWords.length} words in storage`);
   
@@ -76,73 +59,65 @@ export async function getChapterWords(chapter: number, difficulty: number): Prom
     throw new Error('No words available. Please refresh the page.');
   }
   
-  // Sort words by spaced repetition priority:
-  // 1. Words that have never been attempted (new words)
-  // 2. Words with low success rate (struggling words)
-  // 3. Words due for review (nextReview <= now)
-  // 4. Random selection from remaining words
+  // MASTERY-BASED SELECTION
+  // Prioritize by mastery level: Level 0 > Level 1-2 > Level 3-4 (due) > Level 5 (maintenance)
   const now = Date.now();
-  console.log(`[Quest] Step 7: Current timestamp: ${now}`);
   
   const categorizedWords = {
-    newWords: [] as typeof allWords,
-    strugglingWords: [] as typeof allWords,
-    reviewWords: [] as typeof allWords,
-    otherWords: [] as typeof allWords,
+    level0: [] as typeof allWords,      // Need Practice
+    level1_2: [] as typeof allWords,    // Building Confidence
+    level3_4Due: [] as typeof allWords, // Due for Review
+    level5: [] as typeof allWords,      // Maintenance
+    other: [] as typeof allWords,       // Not yet due
   };
   
-  console.log('[Quest] Step 8: Categorizing words...');
+  console.log('[Quest] Categorizing words by mastery level...');
   
-  allWords.forEach((word, index) => {
-    if (word.attempts === 0) {
-      categorizedWords.newWords.push(word);
-      if (index < 3) console.log(`[Quest]   Word "${word.word}" -> NEW (attempts: 0)`);
+  allWords.forEach((word) => {
+    const level = word.masteryLevel ?? 0;
+    const isDue = word.nextReview ? word.nextReview <= now : true;
+    
+    if (level === 0) {
+      categorizedWords.level0.push(word);
+    } else if (level === 1 || level === 2) {
+      categorizedWords.level1_2.push(word);
+    } else if ((level === 3 || level === 4) && isDue) {
+      categorizedWords.level3_4Due.push(word);
+    } else if (level === 5) {
+      categorizedWords.level5.push(word);
     } else {
-      const successRate = word.attempts > 0 ? (word.correctAttempts / word.attempts) : 0;
-      
-      if (successRate < 0.5 && word.attempts >= 2) {
-        // Struggling: less than 50% success rate with at least 2 attempts
-        categorizedWords.strugglingWords.push(word);
-        if (index < 3) console.log(`[Quest]   Word "${word.word}" -> STRUGGLING (rate: ${successRate})`);
-      } else if (word.nextReview && word.nextReview <= now) {
-        // Due for review
-        categorizedWords.reviewWords.push(word);
-        if (index < 3) console.log(`[Quest]   Word "${word.word}" -> REVIEW (nextReview: ${word.nextReview})`);
-      } else {
-        categorizedWords.otherWords.push(word);
-        if (index < 3) console.log(`[Quest]   Word "${word.word}" -> OTHER`);
-      }
+      categorizedWords.other.push(word);
     }
   });
   
-  console.log('[Quest] Step 9: Categorization complete:', {
-    newWords: categorizedWords.newWords.length,
-    strugglingWords: categorizedWords.strugglingWords.length,
-    reviewWords: categorizedWords.reviewWords.length,
-    otherWords: categorizedWords.otherWords.length,
+  console.log('[Quest] Categorization complete:', {
+    level0: categorizedWords.level0.length,
+    level1_2: categorizedWords.level1_2.length,
+    level3_4Due: categorizedWords.level3_4Due.length,
+    level5: categorizedWords.level5.length,
+    other: categorizedWords.other.length,
   });
   
   // Shuffle each category
   const shuffle = <T,>(arr: T[]): T[] => [...arr].sort(() => Math.random() - 0.5);
   
-  console.log('[Quest] Step 10: Shuffling categories...');
-  
-  // Build priority list: struggling > new > review > other
+  // Build priority list based on mastery levels
   const prioritizedWords = [
-    ...shuffle(categorizedWords.strugglingWords),
-    ...shuffle(categorizedWords.newWords),
-    ...shuffle(categorizedWords.reviewWords),
-    ...shuffle(categorizedWords.otherWords),
+    ...shuffle(categorizedWords.level0),
+    ...shuffle(categorizedWords.level1_2),
+    ...shuffle(categorizedWords.level3_4Due),
+    ...shuffle(categorizedWords.level5),
+    ...shuffle(categorizedWords.other),
   ];
   
-  console.log(`[Quest] Step 11: Built prioritized list with ${prioritizedWords.length} words`);
+  console.log(`[Quest] Built prioritized list with ${prioritizedWords.length} words`);
   
   // Select words up to wordCount
   const selectedWords = prioritizedWords
     .slice(0, Math.min(wordCount, prioritizedWords.length))
     .map(w => w.word);
   
-  console.log(`[Quest] Step 12: Selected ${selectedWords.length} words:`, selectedWords);
+  console.log(`[Quest] Selected ${selectedWords.length} words:`, selectedWords);
   
   if (selectedWords.length === 0) {
     console.error('[Quest] ERROR: No words selected!');
@@ -150,20 +125,14 @@ export async function getChapterWords(chapter: number, difficulty: number): Prom
     throw new Error('Could not load words for quest');
   }
   
-  // Cache the selected words for this chapter
-  progress.chapterWordSets[chapter] = selectedWords;
-  await browserDB.updateQuestProgress(progress);
-  
-  console.log('[Quest] Step 13: Cached words to quest progress');
-  
-  logger.info(`Selected ${selectedWords.length} words for chapter ${chapter}:`, {
-    struggling: categorizedWords.strugglingWords.length,
-    new: categorizedWords.newWords.length,
-    review: categorizedWords.reviewWords.length,
-    other: categorizedWords.otherWords.length,
+  logger.info(`Selected ${selectedWords.length} words for chapter ${chapter} based on mastery:`, {
+    level0: categorizedWords.level0.length,
+    level1_2: categorizedWords.level1_2.length,
+    level3_4Due: categorizedWords.level3_4Due.length,
+    level5: categorizedWords.level5.length,
   });
   
-  console.log('[Quest] Step 14: COMPLETE - Returning words:', selectedWords);
+  console.log('[Quest] COMPLETE - Returning fresh word selection');
   
   return selectedWords;
 }

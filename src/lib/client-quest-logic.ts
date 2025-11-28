@@ -152,8 +152,8 @@ export async function markChapterComplete(chapter: number): Promise<void> {
 // Chapter unlocking requirements
 const CHAPTER_UNLOCK_REQUIREMENTS = {
   1: 0, // Chapter 1 always unlocked
-  2: 0, // Need 10 mastered words (level 4-5) to unlock Chapter 2 // TEMP: 0 for testing
-  3: 0, // Need 25 mastered words (level 4-5) to unlock Chapter 3 // TEMP: 0 for testing
+  2: 10, // Need 10 mastered words (level 4-5) to unlock Chapter 2
+  3: 25, // Need 25 mastered words (level 4-5) to unlock Chapter 3
 };
 
 export async function getUnlockedChapters(): Promise<number[]> {

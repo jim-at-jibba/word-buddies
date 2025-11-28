@@ -274,6 +274,11 @@ export async function getWordHeatmapData(): Promise<WordHeatmapData[]> {
     };
   });
   
-  // Sort by mastery level (ascending, so lowest levels first)
-  return heatmapData.sort((a, b) => a.masteryLevel - b.masteryLevel);
+  // Randomize order for visual variety (Fisher-Yates shuffle)
+  for (let i = heatmapData.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [heatmapData[i], heatmapData[j]] = [heatmapData[j], heatmapData[i]];
+  }
+  
+  return heatmapData;
 }

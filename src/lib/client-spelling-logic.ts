@@ -179,7 +179,7 @@ export async function batchUpdateWordStats(
 }
 
 export async function batchUpdateWordStatsWithChanges(
-  attempts: Array<{ word: string; isCorrect: boolean }>
+  attempts: Array<{ word: string; isCorrect: boolean; responseTime?: number }>
 ): Promise<MasteryChange[]> {
   try {
     await ensureInitialized();
@@ -198,8 +198,8 @@ export async function batchUpdateWordStatsWithChanges(
       }
 
       const previousLevel = word.masteryLevel || 0;
-      // Use mastery system to update word stats
-      const updatedWord = updateWordMastery(word, attempt.isCorrect);
+      // Use mastery system to update word stats (with response time for Chapter 3 bonus)
+      const updatedWord = updateWordMastery(word, attempt.isCorrect, attempt.responseTime);
       const newLevel = updatedWord.masteryLevel || 0;
       
       wordsToUpdate.push(updatedWord);

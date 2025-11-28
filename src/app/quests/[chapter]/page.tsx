@@ -27,6 +27,7 @@ interface WordAttempt {
   isCorrect: boolean;
   attempts: number;
   round: number;
+  responseTime?: number; // Response time in milliseconds (for Chapter 3)
 }
 
 function QuestChapterContent() {
@@ -48,6 +49,11 @@ function QuestChapterContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sessionResult, setSessionResult] = useState<Awaited<ReturnType<typeof createQuestSession>> | null>(null);
+  
+  // Chapter 3 timer state
+  const [timeRemaining, setTimeRemaining] = useState(10);
+  const [wordStartTime, setWordStartTime] = useState<number>(Date.now());
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   
   const spellingInputRef = useRef<SpellingInputRef>(null);
   const hasInitializedRef = useRef(false);
@@ -105,7 +111,54 @@ function QuestChapterContent() {
     setPhase('practice');
     setCurrentWordIndex(0);
     setCurrentRound(1);
+    
+    // Start timer for Chapter 3
+    if (chapter === 3) {
+      setWordStartTime(Date.now());
+      setTimeRemaining(10);
+      startTimer();
+    }
   };
+  
+  const startTimer = () => {
+    // Clear any existing timer
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+    }
+    
+    setTimeRemaining(10);
+    setWordStartTime(Date.now());
+    
+    timerIntervalRef.current = setInterval(() => {
+      setTimeRemaining(prev => {
+        if (prev <= 1) {
+          // Time's up! Auto-submit as incorrect
+          if (timerIntervalRef.current) {
+            clearInterval(timerIntervalRef.current);
+          }
+          handleTimeout();
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+  
+  const handleTimeout = () => {
+    if (isSubmitting || currentWordIndex >= roundWords.length) return;
+    
+    // Submit empty spelling as incorrect
+    handleSpellingSubmit('');
+  };
+  
+  // Cleanup timer on unmount
+  useEffect(() => {
+    return () => {
+      if (timerIntervalRef.current) {
+        clearInterval(timerIntervalRef.current);
+      }
+    };
+  }, []);
   
   // Check if this chapter skips preview (Chapter 2 and 3)
   const skipsPreview = chapter >= 2;
@@ -114,8 +167,18 @@ function QuestChapterContent() {
     if (isSubmitting || currentWordIndex >= roundWords.length) return;
 
     setIsSubmitting(true);
+    
+    // Clear timer for Chapter 3
+    if (chapter === 3 && timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+    
     const currentWord = roundWords[currentWordIndex];
     const isCorrect = checkSpelling(userSpelling, currentWord);
+    
+    // Calculate response time for Chapter 3
+    const responseTime = chapter === 3 ? Date.now() - wordStartTime : undefined;
 
     const newAttempt: WordAttempt = {
       word: currentWord,
@@ -123,6 +186,7 @@ function QuestChapterContent() {
       isCorrect,
       attempts: 1,
       round: currentRound,
+      responseTime,
     };
 
     setAttempts(prev => [...prev, newAttempt]);
@@ -144,6 +208,11 @@ function QuestChapterContent() {
       setIsSubmitting(false);
       if (currentWordIndex + 1 < roundWords.length) {
         setCurrentWordIndex(prev => prev + 1);
+        
+        // Start new timer for next word in Chapter 3
+        if (chapter === 3) {
+          startTimer();
+        }
       } else {
         showReview();
       }
@@ -349,6 +418,26 @@ function QuestChapterContent() {
                   <p className="font-kid-friendly text-cat-gray">
                     {currentRound > 1 ? 'Try again!' : 'Listen carefully and type what you hear'}
                   </p>
+                  
+                  {/* Chapter 3 Timer */}
+                  {chapter === 3 && !isSubmitting && (
+                    <motion.div
+                      initial={{ scale: 0.9, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="mt-4"
+                    >
+                      <div className={`inline-flex items-center justify-center w-16 h-16 rounded-full text-2xl font-bold transition-colors ${
+                        timeRemaining <= 3 
+                          ? 'bg-red-100 text-red-600 animate-pulse' 
+                          : timeRemaining <= 5
+                            ? 'bg-yellow-100 text-yellow-600'
+                            : 'bg-cat-light text-cat-orange'
+                      }`}>
+                        {timeRemaining}
+                      </div>
+                      <p className="text-xs text-cat-gray mt-2">seconds left</p>
+                    </motion.div>
+                  )}
                 </div>
 
                 <TTSErrorBoundary word={roundWords[currentWordIndex]}>
@@ -446,6 +535,40 @@ function QuestChapterContent() {
                 <p className="font-kid-friendly text-cat-gray mb-8">
                   Great job! Ready for another quest with new words?
                 </p>
+
+                {/* Chapter 3 Response Time Stats */}
+                {chapter === 3 && attempts.length > 0 && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.2 }}
+                    className="mb-8 bg-gradient-to-r from-blue-50 to-purple-50 rounded-cat-lg p-6"
+                  >
+                    <h3 className="text-xl font-kid-friendly font-bold text-cat-dark mb-4">
+                      ⚡ Challenge Mode Stats
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                      <div className="bg-white rounded-cat p-4">
+                        <div className="text-2xl font-bold text-cat-orange mb-1">
+                          {(attempts.filter(a => a.responseTime && a.responseTime < 5000).length)}
+                        </div>
+                        <div className="text-sm text-cat-gray">Fast Answers (&lt;5s)</div>
+                      </div>
+                      <div className="bg-white rounded-cat p-4">
+                        <div className="text-2xl font-bold text-cat-dark mb-1">
+                          {Math.min(...attempts.filter(a => a.responseTime).map(a => (a.responseTime! / 1000).toFixed(1) as any))}s
+                        </div>
+                        <div className="text-sm text-cat-gray">Fastest Response</div>
+                      </div>
+                      <div className="bg-white rounded-cat p-4">
+                        <div className="text-2xl font-bold text-cat-dark mb-1">
+                          {(attempts.reduce((sum, a) => sum + (a.responseTime || 0), 0) / attempts.filter(a => a.responseTime).length / 1000).toFixed(1)}s
+                        </div>
+                        <div className="text-sm text-cat-gray">Average Time</div>
+                      </div>
+                    </div>
+                  </motion.div>
+                )}
 
                 {/* Mastery Level-Up Feedback */}
                 {sessionResult?.masteryChanges && sessionResult.masteryChanges.length > 0 && (

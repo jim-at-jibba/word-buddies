@@ -53,7 +53,11 @@ export function getLevelUpMessage(newLevel: number, isCorrect: boolean): string 
   return levelMessages[Math.floor(Math.random() * levelMessages.length)];
 }
 
-export function updateWordMastery(word: StoredWord, isCorrect: boolean): StoredWord {
+export function updateWordMastery(
+  word: StoredWord, 
+  isCorrect: boolean, 
+  responseTime?: number
+): StoredWord {
   const currentLevel = word.masteryLevel || 0;
   const currentStreak = word.consecutiveCorrect || 0;
   
@@ -64,6 +68,12 @@ export function updateWordMastery(word: StoredWord, isCorrect: boolean): StoredW
     // Increment streak and level (max level 5)
     newStreak = currentStreak + 1;
     newLevel = Math.min(newStreak, 5);
+    
+    // Chapter 3 bonus: fast response (<5s) gives extra level boost
+    // Only apply if response time provided AND answer is correct
+    if (responseTime !== undefined && responseTime < 5000 && newLevel < 5) {
+      newLevel = Math.min(newLevel + 1, 5);
+    }
   } else {
     // Drop 2 levels (minimum 0) and reset streak
     newLevel = Math.max(currentLevel - 2, 0);

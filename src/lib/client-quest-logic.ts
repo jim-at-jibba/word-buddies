@@ -45,7 +45,8 @@ export async function getChapterWords(chapter: number, difficulty: number): Prom
   
   await ensureInitialized();
   
-  const wordCount = 10; // All chapters use 10 words now (consistent difficulty)
+  // Chapter 3 has 20 words (Challenge Mode), others have 10
+  const wordCount = chapter === 3 ? 20 : 10;
   console.log(`[Quest] Target word count: ${wordCount}`);
   
   const allWords = await browserDB.getAllWords();
@@ -187,7 +188,7 @@ export async function isChapterUnlocked(chapter: number): Promise<boolean> {
 
 export async function createQuestSession(
   chapter: number,
-  attempts: Array<{ word: string; userSpelling: string; isCorrect: boolean; attempts: number; round: number }>
+  attempts: Array<{ word: string; userSpelling: string; isCorrect: boolean; attempts: number; round: number; responseTime?: number }>
 ): Promise<SessionResult> {
   try {
     await ensureInitialized();
@@ -218,15 +219,22 @@ export async function createQuestSession(
       isCorrect: attempt.isCorrect,
       attempts: attempt.attempts,
       round: attempt.round,
+      responseTime: attempt.responseTime,
       createdAt: now,
     }));
 
     await browserDB.insertWordAttempts(wordAttempts);
 
+    // For each unique word, find the best (correct if any, or last) attempt with response time
     const uniqueAttempts = Array.from(new Set(attempts.map(a => a.word))).map(word => {
       const wordAttempts = attempts.filter(a => a.word === word);
-      const isCorrect = wordAttempts.some(a => a.isCorrect);
-      return { word, isCorrect };
+      const correctAttempt = wordAttempts.find(a => a.isCorrect);
+      const bestAttempt = correctAttempt || wordAttempts[wordAttempts.length - 1];
+      return { 
+        word, 
+        isCorrect: bestAttempt.isCorrect,
+        responseTime: bestAttempt.responseTime,
+      };
     });
 
     const { batchUpdateWordStatsWithChanges } = await import('./client-spelling-logic');

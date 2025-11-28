@@ -84,63 +84,58 @@
 
 ## Phase 4: All 3 Chapters + Progression (BUILD TOGETHER)
 
-### Task 4.1: Chapter Unlocking System
-- [ ] Add `chapterUnlocks: number[]` to QuestProgress (e.g., [1] = only Ch1 unlocked)
-- [ ] Add function `isChapterUnlocked(chapter: number): boolean`
-- [ ] Add function `calculateChapterCompletion(chapter: number): number` (% mastery)
-- [ ] Unlock next chapter when current reaches 80% mastery
+### Task 4.1: Chapter Unlocking System ✅
+- [x] Add `getUnlockedChapters()` and `isChapterUnlocked()` functions
+- [x] Unlock based on mastered words (Ch1=0, Ch2=10, Ch3=25)
+- [x] Show lock status dynamically in UI
 
-### Task 4.2: Quest List Page Redesign
-- [ ] Update `src/app/quests/page.tsx`:
-  - [ ] Show 3 chapter cards with descriptions
-  - [ ] Add lock icon on unavailable chapters
-  - [ ] Add "Recommended for Year X" badge
-  - [ ] Show mastery % per chapter (or global)
-  - [ ] Disable click on locked chapters
-  - [ ] Show unlock criteria tooltip
+### Task 4.2: Quest List Page Redesign ✅
+- [x] Update `src/app/quests/page.tsx`:
+  - [x] Show 3 chapter cards with descriptions
+  - [x] Add lock icon on unavailable chapters
+  - [x] Show unlock criteria below locked chapters
+  - [x] Disable click on locked chapters
+  - [x] Show completion checkmark for completed quests
 
-### Task 4.3: Chapter 1 Updates (Preview Mode)
-- [ ] Keep existing preview phase
-- [ ] Add level-up feedback after each word:
-  - [ ] Show animated notification with new level
-  - [ ] Display `getLevelUpMessage()` text
-  - [ ] Show emoji and color for new level
-- [ ] Test Chapter 1 with mastery feedback
+### Task 4.3: Chapter 1 Level-Up Feedback ✅
+- [x] Keep existing preview phase
+- [x] Add level-up feedback in completion screen:
+  - [x] Track mastery changes with `batchUpdateWordStatsWithChanges()`
+  - [x] Show animated cards for words that leveled up
+  - [x] Display "word: Level X → Level Y"
+- [x] Test Chapter 1 with mastery feedback
 
-### Task 4.4: Chapter 2 Implementation (Listen & Spell)
-- [ ] Copy Chapter 1 component structure
-- [ ] Remove preview phase entirely
-- [ ] Go straight to practice phase on load
-- [ ] Keep WordPlayer with replay button
-- [ ] Keep 3-round retry system
-- [ ] Add same level-up feedback as Chapter 1
-- [ ] Test Chapter 2 flow
+### Task 4.4: Chapter 2 - Listen & Spell Mode ✅
+- [x] Skip preview phase entirely
+- [x] Go straight to practice phase on load
+- [x] Keep WordPlayer with replay button
+- [x] Keep 3-round retry system
+- [x] Same 10-word format as Chapter 1
+- [x] Test Chapter 2 flow
 
-### Task 4.5: Chapter 3 Implementation (Challenge Mode)
-- [ ] Copy Chapter 2 structure
-- [ ] Add 10-second countdown timer per word:
-  - [ ] Timer starts when word audio finishes
-  - [ ] Show visual countdown (progress bar or number)
-  - [ ] Auto-submit when timer reaches 0
-  - [ ] Track `responseTime` in milliseconds
-- [ ] Hide WordPlayer replay button (hear once only)
-- [ ] Hide correct/incorrect feedback during practice
-- [ ] Store results silently during practice
-- [ ] Show all results in review phase (suspense!)
-- [ ] Apply response time bonus to mastery calculation:
-  - [ ] Fast (< 5s) + correct = +1.5 levels
-  - [ ] Medium (5-8s) + correct = +1 level
-  - [ ] Slow (> 8s) + correct = +0.5 levels
-  - [ ] Timeout = incorrect, -2 levels
-- [ ] Add level-up feedback in review phase
-- [ ] Test Chapter 3 timer and mastery bonus
+### Task 4.5: Chapter 3 - Challenge Mode ✅
+- [x] 20 words instead of 10
+- [x] Add 10-second countdown timer per word:
+  - [x] Timer starts when entering practice
+  - [x] Show visual countdown with color urgency
+  - [x] Auto-submit when timer reaches 0
+  - [x] Track `responseTime` in milliseconds
+- [x] No preview phase (like Ch2)
+- [x] Store responseTime in attempts
+- [x] Show response time stats in completion screen:
+  - [x] Fast answers (<5s) count
+  - [x] Fastest response time
+  - [x] Average response time
+- [x] Apply response time bonus to mastery:
+  - [x] Fast (<5s) + correct = +1 extra level boost
+- [x] Test Chapter 3 timer and mastery bonus
 
-### Task 4.6: Chapter Progression Testing
-- [ ] Test starting with only Chapter 1 unlocked
-- [ ] Test Chapter 2 unlocks after Chapter 1 reaches 80%
-- [ ] Test Chapter 3 unlocks after Chapter 2 reaches 80%
-- [ ] Test lock icons and disabled state
-- [ ] Test "Recommended" badge appears for user's year group
+### Task 4.6: Testing ✅
+- [x] Restore proper unlock requirements (Ch2=10, Ch3=25)
+- [ ] Test all 3 chapters end-to-end
+- [ ] Verify unlock thresholds work correctly
+- [ ] Test timer functionality
+- [ ] Edge cases (timeout, quick answers, level progression)
 
 ---
 

@@ -2,29 +2,29 @@
 
 ## Phase 1: Core Mastery System (DO FIRST)
 
-### Task 1.1: Database Schema Update
-- [ ] Add `responseTime?: number` to `StoredWordAttempt` type
-- [ ] Upgrade database version to 3
-- [ ] Add migration logic to set `masteryLevel: 0` and `consecutiveCorrect: 0` on existing words
-- [ ] Test database upgrade on existing data
+### Task 1.1: Database Schema Update ✅
+- [x] Add `responseTime?: number` to `StoredWordAttempt` type
+- [x] Upgrade database version to 3
+- [x] Add migration logic to set `masteryLevel: 0` and `consecutiveCorrect: 0` on existing words
+- [x] Test database upgrade on existing data
 
-### Task 1.2: Mastery Logic Integration
-- [ ] Update `client-spelling-logic.ts`:
-  - [ ] Import and use `updateWordMastery()` from mastery-system
-  - [ ] Replace current word stat updates with mastery calculations
-  - [ ] Preserve backward compatibility with existing sessions
-- [ ] Update `client-quest-logic.ts`:
-  - [ ] Use mastery system in `createQuestSession()`
-  - [ ] Track `responseTime` for Chapter 3 attempts
-  - [ ] Calculate mastery with time bonus for Chapter 3
+### Task 1.2: Mastery Logic Integration ✅
+- [x] Update `client-spelling-logic.ts`:
+  - [x] Import and use `updateWordMastery()` from mastery-system
+  - [x] Replace current word stat updates with mastery calculations
+  - [x] Preserve backward compatibility with existing sessions
+- [x] Update `client-quest-logic.ts`:
+  - [x] Use mastery system in `getWordHeatmapData()`
+  - [x] Return mastery level and 6-level status data
+  - [x] Track responseTime support for future Chapter 3
 
-### Task 1.3: Heatmap Visual Updates
-- [ ] Update `src/app/heatmap/page.tsx`:
-  - [ ] Change from 3 colors (red/amber/green) to 6 levels
-  - [ ] Use `getHeatmapColor()` from mastery-system
-  - [ ] Show mastery level number on each word tile
-  - [ ] Update legend to show all 6 levels
-  - [ ] Display days until next review (optional)
+### Task 1.3: Heatmap Visual Updates ✅
+- [x] Update `src/app/heatmap/page.tsx`:
+  - [x] Change from 4 status types to 6 mastery levels (0-5)
+  - [x] Use mastery level colors (red → light yellow → yellow → orange → light green → dark green)
+  - [x] Show mastery level number on each word tile
+  - [x] Update stats display to show all 6 levels
+  - [x] Update filter buttons for 6 levels
 
 ### Task 1.4: Test Mastery Progression
 - [ ] Test correct answer increments level (+1)

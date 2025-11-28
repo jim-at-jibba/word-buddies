@@ -274,7 +274,9 @@ export interface WordHeatmapData {
   successRate: number;
   attempts: number;
   correctAttempts: number;
-  status: 'mastered' | 'practicing' | 'needs-work' | 'not-started';
+  masteryLevel: number; // 0-5
+  consecutiveCorrect: number;
+  status: 'level-0' | 'level-1' | 'level-2' | 'level-3' | 'level-4' | 'level-5';
 }
 
 export async function getWordHeatmapData(): Promise<WordHeatmapData[]> {
@@ -286,25 +288,23 @@ export async function getWordHeatmapData(): Promise<WordHeatmapData[]> {
       ? Math.round((word.correctAttempts / word.attempts) * 100)
       : 0;
     
-    let status: 'mastered' | 'practicing' | 'needs-work' | 'not-started';
-    if (word.attempts === 0) {
-      status = 'not-started';
-    } else if (successRate >= 80) {
-      status = 'mastered';
-    } else if (successRate >= 40) {
-      status = 'practicing';
-    } else {
-      status = 'needs-work';
-    }
+    const masteryLevel = word.masteryLevel || 0;
+    const consecutiveCorrect = word.consecutiveCorrect || 0;
+    
+    // Status based on mastery level
+    const status: WordHeatmapData['status'] = `level-${masteryLevel}` as WordHeatmapData['status'];
     
     return {
       word: word.word,
       successRate,
       attempts: word.attempts,
       correctAttempts: word.correctAttempts,
+      masteryLevel,
+      consecutiveCorrect,
       status,
     };
   });
   
-  return heatmapData.sort((a, b) => a.successRate - b.successRate);
+  // Sort by mastery level (ascending, so lowest levels first)
+  return heatmapData.sort((a, b) => a.masteryLevel - b.masteryLevel);
 }

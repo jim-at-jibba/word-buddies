@@ -173,11 +173,26 @@ function QuestChapterContent() {
 
   const getRoundResults = (round: number) => {
     return words.map(word => {
-      const attempt = attempts.find(a => a.word === word && a.round === round);
+      // Get the latest attempt for this word up to and including the current round
+      const wordAttempts = attempts.filter(a => a.word === word && a.round <= round);
+      
+      if (wordAttempts.length === 0) {
+        return {
+          word,
+          isCorrect: false,
+          attempted: false,
+        };
+      }
+      
+      // Find the most recent attempt (highest round number)
+      const latestAttempt = wordAttempts.reduce((latest, current) => 
+        current.round > latest.round ? current : latest
+      );
+      
       return {
         word,
-        isCorrect: attempt?.isCorrect || false,
-        attempted: !!attempt,
+        isCorrect: latestAttempt.isCorrect,
+        attempted: true,
       };
     });
   };

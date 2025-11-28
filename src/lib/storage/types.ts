@@ -7,6 +7,8 @@ export interface StoredWord {
   lastAttempted?: number; // timestamp
   nextReview?: number; // timestamp
   createdAt: number; // timestamp
+  masteryLevel?: number; // 0-5, tracks consecutive correct attempts
+  consecutiveCorrect?: number; // Current streak of correct answers
 }
 
 export interface StoredSession {
@@ -34,6 +36,7 @@ export interface StoredWordAttempt {
   correctHomophone?: string; // For homophones game
   selectedHomophone?: string; // For homophones game
   round?: number; // Quest round number (1, 2, or 3)
+  responseTime?: number; // Response time in milliseconds (for Chapter 3 mastery bonus)
 }
 
 export interface UserSettings {

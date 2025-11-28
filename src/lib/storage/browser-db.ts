@@ -2,7 +2,7 @@ import { StoredWord, StoredSession, StoredWordAttempt, UserSettings, QuestProgre
 import { retryWithBackoff } from '../retry-utils';
 
 const DB_NAME = 'WordBuddiesDB';
-const DB_VERSION = 2;
+const DB_VERSION = 3;
 
 class BrowserDB {
   private db: IDBDatabase | null = null;
@@ -63,6 +63,41 @@ class BrowserDB {
           if (!db.objectStoreNames.contains('questProgress')) {
             console.log('Creating questProgress store');
             db.createObjectStore('questProgress', { keyPath: 'id' });
+          }
+
+          // Migration for version 3: Add mastery fields to existing words
+          if (oldVersion < 3) {
+            console.log('Migrating to version 3: Adding mastery fields to words');
+            
+            const transaction = (event.target as IDBOpenDBRequest).transaction;
+            if (transaction) {
+              const wordsStore = transaction.objectStore('words');
+              const getAllRequest = wordsStore.getAll();
+              
+              getAllRequest.onsuccess = () => {
+                const allWords = getAllRequest.result as StoredWord[];
+                console.log(`Migrating ${allWords.length} words to add mastery fields`);
+                
+                allWords.forEach(word => {
+                  // Add mastery fields if they don't exist
+                  if (word.masteryLevel === undefined) {
+                    word.masteryLevel = 0;
+                  }
+                  if (word.consecutiveCorrect === undefined) {
+                    word.consecutiveCorrect = 0;
+                  }
+                  
+                  // Update the word
+                  wordsStore.put(word);
+                });
+                
+                console.log('Mastery field migration complete');
+              };
+              
+              getAllRequest.onerror = () => {
+                console.error('Error during mastery migration:', getAllRequest.error);
+              };
+            }
           }
         };
         

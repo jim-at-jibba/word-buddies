@@ -16,16 +16,20 @@ async function ensureInitialized(): Promise<void> {
 
 export async function getRandomWord(): Promise<PracticeWord> {
   try {
+    console.log('[getRandomWord] Starting word selection');
     await ensureInitialized();
     
     const now = Date.now();
+    console.log('[getRandomWord] Current timestamp:', now);
     
     // Get words that need review (past nextReview date or never attempted)
     const reviewWords = await browserDB.getWordsForReview(now);
+    console.log('[getRandomWord] Review words available:', reviewWords.length);
     
     if (reviewWords.length > 0) {
       const randomIndex = Math.floor(Math.random() * reviewWords.length);
       const word = reviewWords[randomIndex];
+      console.log('[getRandomWord] Selected review word:', word.word);
       return {
         word: word.word,
         isNewWord: word.attempts === 0,
@@ -34,9 +38,11 @@ export async function getRandomWord(): Promise<PracticeWord> {
     }
 
     // If no review words, get a random word that hasn't been mastered
+    console.log('[getRandomWord] No review words, checking unmastered words');
     const unmasteredWord = await browserDB.getRandomWord(word => word.correctAttempts < 3);
     
     if (unmasteredWord) {
+      console.log('[getRandomWord] Selected unmastered word:', unmasteredWord.word);
       return {
         word: unmasteredWord.word,
         isNewWord: unmasteredWord.attempts === 0,
@@ -45,9 +51,11 @@ export async function getRandomWord(): Promise<PracticeWord> {
     }
 
     // Fallback: get any word
+    console.log('[getRandomWord] No unmastered words, getting any word');
     const fallbackWord = await browserDB.getRandomWord();
     
     if (fallbackWord) {
+      console.log('[getRandomWord] Selected fallback word:', fallbackWord.word);
       return {
         word: fallbackWord.word,
         isNewWord: fallbackWord.attempts === 0,
@@ -56,13 +64,14 @@ export async function getRandomWord(): Promise<PracticeWord> {
     }
 
     // Ultimate fallback
+    console.error('[getRandomWord] No words found in database! Using fallback "cat"');
     return {
       word: 'cat',
       isNewWord: true,
       difficulty: 1,
     };
   } catch (error) {
-    console.error('Error getting random word:', error);
+    console.error('[getRandomWord] Error getting random word:', error);
     return {
       word: 'cat',
       isNewWord: true,
@@ -113,39 +122,17 @@ export async function updateWordStats(wordText: string, isCorrect: boolean): Pro
       return;
     }
 
-    const newAttempts = word.attempts + 1;
-    const newCorrectAttempts = word.correctAttempts + (isCorrect ? 1 : 0);
-    const successRate = newCorrectAttempts / newAttempts;
-
-    // Calculate next review date using spaced repetition
-    let nextReview: number | undefined;
-    if (isCorrect) {
-      const intervalIndex = Math.min(word.correctAttempts, SPACED_REPETITION_INTERVALS.length - 1);
-      const interval = SPACED_REPETITION_INTERVALS[intervalIndex];
-      nextReview = Date.now() + (interval * 24 * 60 * 60 * 1000); // Convert days to milliseconds
-    } else {
-      // If incorrect, review again soon (2 hours)
-      nextReview = Date.now() + (2 * 60 * 60 * 1000);
-    }
-
-    // Update difficulty based on performance
-    let newDifficulty = word.difficulty;
-    if (successRate >= 0.8 && newAttempts >= 3) {
-      newDifficulty = Math.min(5, word.difficulty + 1);
-    } else if (successRate < 0.4 && newAttempts >= 3) {
-      newDifficulty = Math.max(1, word.difficulty - 1);
-    }
-
-    const updatedWord: StoredWord = {
-      ...word,
-      attempts: newAttempts,
-      correctAttempts: newCorrectAttempts,
-      lastAttempted: Date.now(),
-      nextReview,
-      difficulty: newDifficulty,
-    };
+    // Use mastery system to update word stats
+    const { updateWordMastery } = await import('./mastery-system');
+    const updatedWord = updateWordMastery(word, isCorrect);
 
     await browserDB.updateWord(updatedWord);
+    
+    console.log(`[Mastery] Word "${wordText}" updated:`, {
+      masteryLevel: updatedWord.masteryLevel,
+      consecutiveCorrect: updatedWord.consecutiveCorrect,
+      isCorrect,
+    });
   } catch (error) {
     console.error('Error updating word stats:', error);
   }
@@ -157,6 +144,8 @@ export async function batchUpdateWordStats(
   try {
     await ensureInitialized();
     
+    const { updateWordMastery } = await import('./mastery-system');
+    
     // Get all words that need to be updated
     const wordsToUpdate: StoredWord[] = [];
     
@@ -167,38 +156,8 @@ export async function batchUpdateWordStats(
         continue;
       }
 
-      const newAttempts = word.attempts + 1;
-      const newCorrectAttempts = word.correctAttempts + (attempt.isCorrect ? 1 : 0);
-      const successRate = newCorrectAttempts / newAttempts;
-
-      // Calculate next review date using spaced repetition
-      let nextReview: number | undefined;
-      if (attempt.isCorrect) {
-        const intervalIndex = Math.min(word.correctAttempts, SPACED_REPETITION_INTERVALS.length - 1);
-        const interval = SPACED_REPETITION_INTERVALS[intervalIndex];
-        nextReview = Date.now() + (interval * 24 * 60 * 60 * 1000); // Convert days to milliseconds
-      } else {
-        // If incorrect, review again soon (2 hours)
-        nextReview = Date.now() + (2 * 60 * 60 * 1000);
-      }
-
-      // Update difficulty based on performance
-      let newDifficulty = word.difficulty;
-      if (successRate >= 0.8 && newAttempts >= 3) {
-        newDifficulty = Math.min(5, word.difficulty + 1);
-      } else if (successRate < 0.4 && newAttempts >= 3) {
-        newDifficulty = Math.max(1, word.difficulty - 1);
-      }
-
-      const updatedWord: StoredWord = {
-        ...word,
-        attempts: newAttempts,
-        correctAttempts: newCorrectAttempts,
-        lastAttempted: Date.now(),
-        nextReview,
-        difficulty: newDifficulty,
-      };
-
+      // Use mastery system to update word stats
+      const updatedWord = updateWordMastery(word, attempt.isCorrect);
       wordsToUpdate.push(updatedWord);
     }
 

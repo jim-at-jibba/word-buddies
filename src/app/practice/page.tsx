@@ -70,7 +70,6 @@ function PracticeContent() {
         return;
       }
       logger.debug('Fetched new word:', word.word, 'at:', new Date().toISOString());
-      logger.debug('Previous currentWord was:', currentWord?.word);
       setCurrentWord(word);
       logger.debug('Setting currentWord to:', word.word);
     } catch (error) {
@@ -86,7 +85,7 @@ function PracticeContent() {
     } finally {
       setIsLoading(false);
     }
-  }, [currentWord, notifications, isReviewMode, router]);
+  }, [notifications, isReviewMode, router]);
 
   useEffect(() => {
     if (!hasInitializedRef.current) {

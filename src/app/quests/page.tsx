@@ -20,6 +20,12 @@ function QuestsContent() {
   const [loading, setLoading] = useState(true);
   const [showTutorial, setShowTutorial] = useState(false);
   const [showHelpModal, setShowHelpModal] = useState(false);
+  const [masteryStats, setMasteryStats] = useState<{
+    total: number;
+    mastered: number;
+    percentage: number;
+    byLevel: Record<number, number>;
+  } | null>(null);
 
   useEffect(() => {
     loadQuestProgress();
@@ -40,6 +46,13 @@ function QuestsContent() {
       ]);
       setQuestProgress(progress);
       setUnlockedChapters(unlocked);
+      
+      // Load mastery stats
+      const { browserDB } = await import('@/lib/storage');
+      const { getMasteryProgress } = await import('@/lib/mastery-system');
+      const allWords = await browserDB.getAllWords();
+      const stats = getMasteryProgress(allWords);
+      setMasteryStats(stats);
     } catch (error) {
       logger.error('Error loading quest progress:', error);
     } finally {
@@ -134,6 +147,65 @@ function QuestsContent() {
         </motion.header>
 
         <div className="max-w-4xl mx-auto">
+          {/* Global Mastery Progress Widget */}
+          {masteryStats && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="bg-gradient-to-r from-cat-orange/10 via-cat-light to-cat-cream rounded-cat-lg p-6 shadow-cat mb-8"
+            >
+              <div className="text-center mb-4">
+                <h2 className="text-2xl font-kid-friendly font-bold text-cat-dark mb-2">
+                  📊 Your Mastery Progress
+                </h2>
+                <div className="flex items-center justify-center space-x-2">
+                  <span className="text-4xl font-bold text-cat-orange">{masteryStats.mastered}</span>
+                  <span className="text-2xl text-cat-gray">/</span>
+                  <span className="text-2xl text-cat-gray">{masteryStats.total}</span>
+                  <span className="text-lg text-cat-gray">words mastered</span>
+                </div>
+                <div className="text-xl font-kid-friendly text-cat-dark mt-2">
+                  ({masteryStats.percentage}%)
+                </div>
+              </div>
+              
+              {/* Progress Bar */}
+              <div className="w-full bg-white rounded-full h-6 overflow-hidden shadow-inner mb-4">
+                <motion.div
+                  initial={{ width: 0 }}
+                  animate={{ width: `${masteryStats.percentage}%` }}
+                  transition={{ duration: 1, delay: 0.3 }}
+                  className="h-full bg-gradient-to-r from-cat-orange to-cat-success flex items-center justify-end pr-2"
+                >
+                  {masteryStats.percentage > 5 && (
+                    <span className="text-white font-bold text-sm">
+                      {masteryStats.percentage}%
+                    </span>
+                  )}
+                </motion.div>
+              </div>
+              
+              {/* Level Breakdown */}
+              <div className="grid grid-cols-6 gap-2 text-center text-xs font-kid-friendly">
+                {[0, 1, 2, 3, 4, 5].map(level => (
+                  <div key={level} className="bg-white rounded-cat p-2">
+                    <div className={`w-6 h-6 rounded-full mx-auto mb-1 ${
+                      level === 0 ? 'bg-red-500' :
+                      level === 1 ? 'bg-yellow-300' :
+                      level === 2 ? 'bg-yellow-500' :
+                      level === 3 ? 'bg-orange-500' :
+                      level === 4 ? 'bg-green-400' :
+                      'bg-green-700'
+                    }`} />
+                    <div className="text-cat-dark font-bold">{masteryStats.byLevel[level]}</div>
+                    <div className="text-cat-gray">L{level}</div>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
           <div className="grid md:grid-cols-3 gap-6 mb-8">
             
             {/* Chapter 1 */}

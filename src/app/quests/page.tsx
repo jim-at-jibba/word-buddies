@@ -8,7 +8,7 @@ import CatMascot from '@/components/CatMascot';
 import MasteryTutorial from '@/components/MasteryTutorial';
 import MasteryHelpModal from '@/components/MasteryHelpModal';
 import { useSettings } from '@/hooks/useSettings';
-import { getQuestProgress, getUnlockedChapters, isChapterUnlocked } from '@/lib/client-quest-logic';
+import { getQuestProgress, getUnlockedChapters } from '@/lib/client-quest-logic';
 import { QuestProgress } from '@/lib/storage';
 import { logger } from '@/lib/logger';
 

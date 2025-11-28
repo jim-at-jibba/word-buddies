@@ -159,9 +159,6 @@ function QuestChapterContent() {
       }
     };
   }, []);
-  
-  // Check if this chapter skips preview (Chapter 2 and 3)
-  const skipsPreview = chapter >= 2;
 
   const handleSpellingSubmit = async (userSpelling: string) => {
     if (isSubmitting || currentWordIndex >= roundWords.length) return;
@@ -556,7 +553,7 @@ function QuestChapterContent() {
                       </div>
                       <div className="bg-white rounded-cat p-4">
                         <div className="text-2xl font-bold text-cat-dark mb-1">
-                          {Math.min(...attempts.filter(a => a.responseTime).map(a => (a.responseTime! / 1000).toFixed(1) as any))}s
+                          {Math.min(...attempts.filter(a => a.responseTime).map(a => Number((a.responseTime! / 1000).toFixed(1))))}s
                         </div>
                         <div className="text-sm text-cat-gray">Fastest Response</div>
                       </div>

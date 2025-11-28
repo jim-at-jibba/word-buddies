@@ -58,14 +58,14 @@ export default function MasteryHelpModal({ onClose }: MasteryHelpModalProps) {
         <div className="bg-cat-warning/10 border-2 border-cat-warning rounded-cat p-4 mb-6">
           <p className="font-kid-friendly text-cat-dark">
             <span className="font-bold">⚠️ Important:</span> If you get a word wrong, you drop back down 2 levels. 
-            But don't worry - you can always practice again!
+            But don&apos;t worry - you can always practice again!
           </p>
         </div>
 
         <div className="bg-cat-success/10 border-2 border-cat-success rounded-cat p-4 mb-6">
           <p className="font-kid-friendly text-cat-dark">
             <span className="font-bold">🌟 Goal:</span> Turn all your words dark green by spelling them correctly 
-            5 times in a row. Keep practicing and you'll get there!
+            5 times in a row. Keep practicing and you&apos;ll get there!
           </p>
         </div>
 
